@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAILO — Assistant IA Foncia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --header-bg:    #1a3a3a;
+      --header-text:  #ffffff;
+      --teal:         #0d9488;
+      --teal-light:   #ccfbf1;
+      --teal-mid:     #14b8a6;
+      --blue:         #3b82f6;
+      --blue-light:   #dbeafe;
+      --orange:       #f97316;
+      --orange-light: #ffedd5;
+      --salmon:       #f87171;
+      --salmon-light: #fee2e2;
+      --green:        #22c55e;
+      --green-light:  #dcfce7;
+      --yellow:       #eab308;
+      --red:          #ef4444;
+      --grey-50:      #f9fafb;
+      --grey-100:     #f3f4f6;
+      --grey-200:     #e5e7eb;
+      --grey-300:     #d1d5db;
+      --grey-400:     #9ca3af;
+      --grey-500:     #6b7280;
+      --grey-700:     #374151;
+      --grey-900:     #111827;
+      --radius-sm:    4px;
+      --radius-md:    8px;
+      --radius-lg:    12px;
+      --radius-pill:  999px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      background: #ffffff;
+      color: var(--grey-900);
+      overflow: hidden;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+      max-width: 360px;
+      margin: 0 auto;
+      background: #ffffff;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--header-bg);
+      padding: 12px 14px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .header-logo {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--teal);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .header-text { flex: 1; }
+    .header-title {
+      font-size: 15px; font-weight: 700;
+      color: #fff; line-height: 1.2;
+    }
+    .header-sub {
+      font-size: 10px; color: rgba(255,255,255,.55);
+      margin-top: 1px; line-height: 1.3;
+    }
+
+    .header-status {
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* seed / test-email button */
+    .seed-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s, transform .1s;
+      position: relative;
+    }
+    .seed-btn:hover  { background: rgba(255,255,255,.22); }
+    .seed-btn:active { transform: scale(.92); }
+    .seed-btn svg    { display: block; }
+    .seed-btn.loading {
+      opacity: .55; pointer-events: none;
+      animation: seed-pulse .8s ease-in-out infinite alternate;
+    }
+    @keyframes seed-pulse { from { opacity:.55; } to { opacity:.85; } }
+
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 2px rgba(34,197,94,.3);
+    }
+    .status-label { font-size: 10px; color: rgba(255,255,255,.55); }
+
+    /* ── Contact card ── */
+    .contact-card {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--grey-200);
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .contact-top {
+      display: flex; align-items: flex-start; gap: 9px;
+    }
+
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #64748b;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+
+    .contact-info { flex: 1; min-width: 0; }
+    .contact-name {
+      font-size: 13px; font-weight: 700;
+      color: var(--grey-900); line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .contact-role {
+      font-size: 11px; color: var(--grey-500);
+      line-height: 1.4; margin-top: 1px;
+    }
+
+    .millenium-badge {
+      background: var(--grey-100);
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius-pill);
+      padding: 2px 8px;
+      font-size: 10px; font-weight: 500;
+      color: var(--grey-700);
+      white-space: nowrap;
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 1px;
+    }
+
+    .contact-tags {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      margin-top: 7px;
+    }
+
+    .tag-pill {
+      border-radius: var(--radius-pill);
+      padding: 2px 8px;
+      font-size: 10px; font-weight: 500;
+      line-height: 1.5;
+    }
+    .tag-blue   { background: var(--blue-light);   color: #1d4ed8; }
+    .tag-orange { background: var(--orange-light);  color: #c2410c; }
+    .tag-salmon { background: var(--salmon-light);  color: #b91c1c; }
+    .tag-red    { background: #fee2e2;              color: #991b1b; }
+    .tag-green  { background: var(--green-light);   color: #15803d; }
+    .tag-teal   { background: var(--teal-light);    color: #0f766e; }
+    .tag-grey   { background: var(--grey-100);      color: var(--grey-700); }
+
+    .contact-property {
+      margin-top: 5px;
+      font-size: 11px; font-weight: 700;
+      color: var(--grey-700);
+      letter-spacing: .02em;
+    }
+
+    /* ── Tab bar ── */
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid var(--grey-200);
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 9px 4px 8px;
+      font-family: inherit;
+      font-size: 12px; font-weight: 500;
+      color: var(--grey-400);
+      background: none; border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color .15s;
+      text-align: center;
+    }
+    .tab-btn:hover { color: var(--grey-700); }
+    .tab-btn.active {
+      color: var(--teal);
+      font-weight: 700;
+      border-bottom-color: var(--teal);
+    }
+
+    /* ── Tab panels ── */
+    .tab-panel {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      background: var(--grey-50);
+    }
+    .tab-panel.active { display: flex; flex-direction: column; }
+
+    /* scrollbar */
+    .tab-panel::-webkit-scrollbar { width: 4px; }
+    .tab-panel::-webkit-scrollbar-track { background: transparent; }
+    .tab-panel::-webkit-scrollbar-thumb { background: var(--grey-300); border-radius: 2px; }
+
+    /* ── Section headers ── */
+    .section-header {
+      padding: 10px 14px 6px;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .08em;
+      color: var(--grey-400);
+      text-transform: uppercase;
+    }
+
+    /* ── Email card ── */
+    .email-card {
+      margin: 0 10px 10px;
+      background: #fff;
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+    }
+    .email-subject {
+      font-size: 12px; font-weight: 700;
+      color: var(--grey-900); line-height: 1.4;
+      margin-bottom: 4px;
+    }
+    .email-meta {
+      font-size: 10px; color: var(--grey-400);
+      margin-bottom: 5px;
+    }
+    .email-preview {
+      font-size: 11px; color: var(--grey-600, #4b5563);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ── Alert list ── */
+    .alert-list {
+      margin: 0 10px 10px;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .alert-row {
+      background: #fff;
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius-md);
+      padding: 8px 11px;
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .alert-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0; margin-top: 3px;
+    }
+    .dot-red    { background: var(--red); }
+    .dot-orange { background: var(--orange); }
+    .dot-yellow { background: var(--yellow); }
+    .dot-green  { background: var(--green); }
+
+    .alert-text {
+      font-size: 11px; color: var(--grey-700);
+      line-height: 1.4;
+    }
+
+    /* ── Property cards ── */
+    .property-card {
+      margin: 0 10px 8px;
+      background: #fff;
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+    }
+    .property-name {
+      font-size: 12px; font-weight: 700;
+      color: var(--grey-900); letter-spacing: .02em;
+      margin-bottom: 2px;
+    }
+    .property-detail {
+      font-size: 10px; color: var(--grey-400);
+      margin-bottom: 6px;
+    }
+    .property-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+
+    /* ── AI Chat panel ── */
+    #panel-ai {
+      display: none;
+      flex-direction: column;
+    }
+    #panel-ai.active { display: flex; }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--grey-300); border-radius: 2px; }
+
+    .message-bubble {
+      max-width: 86%;
+      padding: 9px 11px;
+      border-radius: var(--radius-lg);
+      font-size: 12px; line-height: 1.5;
+    }
+    .msg-ai {
+      background: #fff;
+      border: 1px solid var(--grey-200);
+      border-bottom-left-radius: var(--radius-sm);
+      color: var(--grey-900);
+      align-self: flex-start;
+    }
+    .msg-user {
+      background: var(--teal);
+      color: #fff;
+      border-bottom-right-radius: var(--radius-sm);
+      align-self: flex-end;
+    }
+    .msg-timestamp {
+      font-size: 9px; color: var(--grey-400);
+      margin-top: 2px;
+    }
+    .msg-ai-wrapper { display: flex; flex-direction: column; align-items: flex-start; }
+    .msg-user-wrapper { display: flex; flex-direction: column; align-items: flex-end; }
+
+    .msg-sender {
+      font-size: 9px; font-weight: 700;
+      color: var(--teal); margin-bottom: 2px;
+      letter-spacing: .03em; text-transform: uppercase;
+    }
+
+    /* Quick actions grid */
+    .quick-actions {
+      padding: 8px 10px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      border-top: 1px solid var(--grey-200);
+    }
+    .quick-btn {
+      padding: 7px 8px;
+      background: #fff;
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 11px; font-weight: 500;
+      color: var(--grey-700);
+      cursor: pointer;
+      text-align: center;
+      transition: background .12s, border-color .12s;
+    }
+    .quick-btn:hover {
+      background: var(--grey-50);
+      border-color: var(--teal);
+      color: var(--teal);
+    }
+    .quick-btn.primary {
+      background: var(--teal-light);
+      border-color: var(--teal);
+      color: var(--teal);
+    }
+
+    /* Chat input */
+    .chat-input-row {
+      padding: 8px 10px;
+      display: flex; gap: 6px; align-items: center;
+      border-top: 1px solid var(--grey-200);
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .chat-input {
+      flex: 1;
+      padding: 7px 10px;
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius-pill);
+      font-family: inherit; font-size: 12px;
+      outline: none;
+      background: var(--grey-50);
+      color: var(--grey-900);
+    }
+    .chat-input:focus {
+      border-color: var(--teal);
+      background: #fff;
+    }
+    .chat-input::placeholder { color: var(--grey-400); }
+
+    .send-btn {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--teal);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .12s;
+    }
+    .send-btn:hover { background: #0f766e; }
+    .send-btn svg { color: #fff; }
+
+    /* ── Actions panel ── */
+    .actions-grid {
+      padding: 10px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .action-card {
+      background: #fff;
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius-md);
+      padding: 12px 10px;
+      cursor: pointer;
+      transition: border-color .12s, box-shadow .12s;
+    }
+    .action-card:hover {
+      border-color: var(--teal);
+      box-shadow: 0 2px 8px rgba(13,148,136,.12);
+    }
+    .action-card:active { transform: scale(.97); }
+    .action-icon { font-size: 20px; margin-bottom: 5px; line-height: 1; }
+    .action-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--grey-900); line-height: 1.3;
+      margin-bottom: 2px;
+    }
+    .action-sub {
+      font-size: 10px; color: var(--grey-400);
+      line-height: 1.4;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      background: var(--grey-900); color: #fff;
+      padding: 8px 16px; border-radius: var(--radius-pill);
+      font-size: 12px; font-weight: 500;
+      opacity: 0; transition: opacity .2s;
+      pointer-events: none; z-index: 999;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── Compose modal (standalone mode) ── */
+    .compose-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 500;
+      align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .compose-overlay.open { display: flex; }
+    .compose-modal {
+      background: #fff; border-radius: var(--radius-lg);
+      padding: 16px; width: 100%;
+      box-shadow: 0 8px 32px rgba(0,0,0,.2);
+    }
+    .compose-modal h3 { font-size: 13px; margin-bottom: 8px; }
+    .compose-body {
+      width: 100%; min-height: 120px;
+      border: 1px solid var(--grey-200); border-radius: var(--radius-md);
+      padding: 8px; font-family: inherit; font-size: 12px;
+      resize: vertical; outline: none;
+    }
+    .compose-body:focus { border-color: var(--teal); }
+    .compose-actions { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
+    .compose-close {
+      padding: 6px 12px; border-radius: var(--radius-pill);
+      border: 1px solid var(--grey-200);
+      background: #fff; font-family: inherit; font-size: 12px;
+      cursor: pointer;
+    }
+    .compose-send {
+      padding: 6px 14px; border-radius: var(--radius-pill);
+      border: none; background: var(--teal);
+      color: #fff; font-family: inherit; font-size: 12px; font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ── Loader ── */
+    .loading-screen {
+      position: fixed; inset: 0;
+      background: #fff;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 10px; z-index: 900;
+    }
+    .loading-logo {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--teal);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 700; color: #fff;
+    }
+    .loading-text { font-size: 12px; color: var(--grey-400); }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--grey-200);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Typing indicator ── */
+    .typing-dots { display: flex; gap: 3px; align-items: center; padding: 4px 2px; }
+    .typing-dots span {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--grey-300);
+      animation: bounce .8s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: .15s; }
+    .typing-dots span:nth-child(3) { animation-delay: .3s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-4px); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div class="loading-screen" id="loading">
+  <div class="loading-logo">M</div>
+  <div class="spinner"></div>
+  <div class="loading-text">Chargement du contexte…</div>
+</div>
+
+<!-- Main app (hidden until context loads) -->
+<div id="app" style="display:none;">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-logo">M</div>
+    <div class="header-text">
+      <div class="header-title">MAILO</div>
+      <div class="header-sub">Assistant IA — Foncia Service Client</div>
+    </div>
+    <div class="header-status">
+      <!-- Seed / test-email button -->
+      <button class="seed-btn" id="seed-btn" title="Envoyer 3 emails de test dans la boîte">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <polyline points="2,4 12,13 22,4"/>
+        </svg>
+      </button>
+      <div class="status-dot"></div>
+      <span class="status-label">En ligne</span>
+    </div>
+  </header>
+
+  <!-- Contact card -->
+  <div class="contact-card" id="contact-card">
+    <div class="contact-top">
+      <div class="avatar" id="contact-avatar">DP</div>
+      <div class="contact-info">
+        <div class="contact-name" id="contact-name">Damien Pozzi</div>
+        <div class="contact-role" id="contact-role">Collaborateur interne · Test-Sirius-Reemia</div>
+      </div>
+      <div class="millenium-badge" id="millenium-badge">⊙ Millénium</div>
+    </div>
+    <div class="contact-tags" id="contact-tags"></div>
+    <div class="contact-property" id="contact-property">SDC BLO VOLTAIRE</div>
+  </div>
+
+  <!-- Tab bar -->
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="contexte">Contexte</button>
+    <button class="tab-btn" data-tab="ai">Assistant IA</button>
+    <button class="tab-btn" data-tab="actions">Actions</button>
+  </nav>
+
+  <!-- ── Tab 1: Contexte ── -->
+  <div class="tab-panel active" id="panel-contexte">
+
+    <div class="section-header">Email en cours</div>
+    <div class="email-card">
+      <div class="email-subject" id="email-subject">Demande d'informations sur l'assurance</div>
+      <div class="email-meta" id="email-meta">19/12/2025 · Damien Pozzi</div>
+      <div class="email-preview" id="email-preview">
+        Demande de copie du contrat MRCI multirisque immeuble en cours.
+      </div>
+    </div>
+
+    <div class="section-header">Alertes dossier</div>
+    <div class="alert-list" id="alert-list"></div>
+
+    <div class="section-header">Données Millénium — Biens gérés</div>
+    <div id="properties-list"></div>
+    <div style="height:12px;"></div>
+
+  </div>
+
+  <!-- ── Tab 2: Assistant IA ── -->
+  <div class="tab-panel" id="panel-ai">
+
+    <div class="chat-messages" id="chat-messages"></div>
+
+    <div class="quick-actions">
+      <button class="quick-btn" data-action="synthese">Synthèse historique</button>
+      <button class="quick-btn primary" data-action="rediger">Rédiger réponse</button>
+      <button class="quick-btn" data-action="import">Import Millénium</button>
+      <button class="quick-btn" data-action="appels">Appels de fonds</button>
+    </div>
+
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-input"
+        type="text" placeholder="Question sur ce dossier…" />
+      <button class="send-btn" id="send-btn" aria-label="Envoyer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ── Tab 3: Actions ── -->
+  <div class="tab-panel" id="panel-actions">
+    <div class="section-header" style="padding-top:12px;">Actions disponibles</div>
+    <div class="actions-grid" id="actions-grid"></div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Compose modal (standalone dev mode) -->
+<div class="compose-overlay" id="compose-overlay">
+  <div class="compose-modal">
+    <h3>✏️ Brouillon de réponse</h3>
+    <textarea class="compose-body" id="compose-body" rows="6"></textarea>
+    <div class="compose-actions">
+      <button class="compose-close" id="compose-close">Fermer</button>
+      <button class="compose-send" id="compose-copy">Copier</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Utilities ──────────────────────────────────────────────────────────────
+
+function now() {
+  return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function initials(name) {
+  if (!name) return '?';
+  return name.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
+}
+
+function showToast(msg, duration = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── Branded HTML email generator ──────────────────────────────────────────
+
+function generateReplyEmail() {
+  const rc   = chatCtx.replyContent;
+  const name = chatCtx.contactName || 'Madame, Monsieur';
+
+  let bodyContent;
+  if (rc) {
+    const points = rc.points
+      .map(p => `<li style="margin-bottom:8px;">${p}</li>`)
+      .join('');
+    bodyContent = `
+      <p style="margin:0 0 16px;">${rc.intro}</p>
+      <ul style="margin:0 0 16px;padding-left:20px;line-height:1.7;">${points}</ul>
+      <p style="margin:0 0 16px;">${rc.closing}</p>`;
+  } else {
+    bodyContent = `
+      <p style="margin:0 0 16px;">Suite à votre demande concernant <em>${chatCtx.subject || 'votre dossier'}</em>, nous revenons vers vous avec les éléments suivants.</p>
+      <p style="margin:0 0 16px;">[Insérer votre réponse ici]</p>`;
+  }
+
+  return `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+
+  <!-- Header -->
+  <tr><td style="background:#1a3a3a;padding:24px 32px;">
+    <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:3px;">EMERIA</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:3px;">Foncia · Service Client</div>
+  </td></tr>
+
+  <!-- Accent bar -->
+  <tr><td style="background:#0d9488;height:3px;"></td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:32px;color:#374151;font-size:14px;line-height:1.6;">
+    <p style="margin:0 0 20px;font-size:15px;">Bonjour <strong>${name}</strong>,</p>
+    ${bodyContent}
+    <div style="border-top:1px solid #e5e7eb;margin:24px 0;"></div>
+    <p style="margin:0;font-size:13px;color:#374151;">
+      Cordialement,<br>
+      <strong style="color:#1a3a3a;">L'équipe Emeria — Foncia Service Client</strong><br>
+      <span style="color:#9ca3af;font-size:12px;">✉ emeria-care@foncia.fr &nbsp;|&nbsp; 📞 01 XX XX XX XX</span>
+    </p>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:14px 32px;text-align:center;">
+    <p style="margin:0;font-size:11px;color:#9ca3af;">
+      © 2025 Emeria · Foncia Group — Ce message et ses pièces jointes sont confidentiels.
+    </p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`;
+}
+
+// ── Compose overlay (dev mode fallback) ───────────────────────────────────
+
+window.addEventListener('mailo:compose', (e) => {
+  const overlay = document.getElementById('compose-overlay');
+  const body    = document.getElementById('compose-body');
+  body.value = e.detail.body;
+  overlay.classList.add('open');
+});
+
+window.addEventListener('mailo:compose:success', () => {
+  showToast('✅ Brouillon de réponse créé dans Front', 2800);
+});
+
+document.getElementById('compose-close').addEventListener('click', () => {
+  document.getElementById('compose-overlay').classList.remove('open');
+});
+
+document.getElementById('compose-copy').addEventListener('click', () => {
+  const body = document.getElementById('compose-body');
+  navigator.clipboard.writeText(body.value).catch(() => {});
+  showToast('Brouillon copié dans le presse-papiers');
+  document.getElementById('compose-overlay').classList.remove('open');
+});
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tabId = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + tabId).classList.add('active');
+  });
+});
+
+// ── Chat logic ─────────────────────────────────────────────────────────────
+
+let chatCtx = { contactName: '', subject: '', replyContent: null, property: '' };
+
+function addMessage(text, role = 'ai') {
+  const container = document.getElementById('chat-messages');
+
+  // Remove typing indicator if present
+  const typing = container.querySelector('.typing-row');
+  if (typing) typing.remove();
+
+  const wrapper = document.createElement('div');
+  wrapper.className = role === 'ai' ? 'msg-ai-wrapper' : 'msg-user-wrapper';
+
+  if (role === 'ai') {
+    const sender = document.createElement('div');
+    sender.className = 'msg-sender';
+    sender.textContent = 'MAILO';
+    wrapper.appendChild(sender);
+  }
+
+  const bubble = document.createElement('div');
+  bubble.className = 'message-bubble ' + (role === 'ai' ? 'msg-ai' : 'msg-user');
+  bubble.textContent = text;
+
+  const ts = document.createElement('div');
+  ts.className = 'msg-timestamp';
+  ts.textContent = now();
+
+  wrapper.appendChild(bubble);
+  wrapper.appendChild(ts);
+  container.appendChild(wrapper);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTyping() {
+  const container = document.getElementById('chat-messages');
+  const row = document.createElement('div');
+  row.className = 'msg-ai-wrapper typing-row';
+
+  const sender = document.createElement('div');
+  sender.className = 'msg-sender';
+  sender.textContent = 'MAILO';
+  row.appendChild(sender);
+
+  const dots = document.createElement('div');
+  dots.className = 'message-bubble msg-ai';
+  dots.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  row.appendChild(dots);
+
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+}
+
+// Simulated AI responses
+const aiResponses = {
+  synthese:
+    "Voici une synthèse des échanges avec {name} :\n\n" +
+    "• 3 demandes concernant la copropriété SDC BLO VOLTAIRE\n" +
+    "• Dernière interaction : demande de contrat d'assurance MRCI\n" +
+    "• Appel de fonds Q4 en attente de traitement\n" +
+    "• Aucun litige en cours",
+  rediger:
+    "Je prépare un brouillon de réponse pour {name}…\nVeuillez patienter.",
+  import:
+    "Import Millénium en cours pour le dossier SDC BLO VOLTAIRE…\n\nDonnées rafraîchies ✓\n• 34 lots confirmés\n• Gestionnaire : M. Arnaud\n• Appel fonds Q4 : 12 450 €",
+  appels:
+    "Appels de fonds — SDC BLO VOLTAIRE :\n\n" +
+    "• Q3 2025 : 11 800 € — Réglé ✓\n" +
+    "• Q4 2025 : 12 450 € — En attente ⚠️\n\n" +
+    "Souhaitez-vous envoyer un rappel au copropriétaire ?",
+  default:
+    "Compris. Je recherche des informations sur ce dossier…\n\n" +
+    "Pour toute demande concernant {name} / SDC BLO VOLTAIRE, je suis disponible. " +
+    "Précisez votre demande pour que je vous aide au mieux.",
+};
+
+function sendChatMessage(text) {
+  if (!text.trim()) return;
+  addMessage(text, 'user');
+  document.getElementById('chat-input').value = '';
+  showTyping();
+
+  setTimeout(() => {
+    const lower = text.toLowerCase();
+    let resp;
+    if (/synth|historique|résumé/i.test(lower))       resp = aiResponses.synthese;
+    else if (/rédig|brouillon|réponse/i.test(lower))  resp = aiResponses.rediger;
+    else if (/import|millénium|milleni/i.test(lower)) resp = aiResponses.import;
+    else if (/appel|fond|fonds/i.test(lower))         resp = aiResponses.appels;
+    else                                               resp = aiResponses.default;
+
+    resp = resp.replace('{name}', chatCtx.contactName || 'le contact');
+    addMessage(resp, 'ai');
+
+    if (/rédig|brouillon|réponse/i.test(lower)) {
+      setTimeout(() => {
+        window.frontCompose && window.frontCompose.reply(generateReplyEmail());
+      }, 600);
+    }
+  }, 900 + Math.random() * 400);
+}
+
+document.getElementById('send-btn').addEventListener('click', () => {
+  sendChatMessage(document.getElementById('chat-input').value);
+});
+document.getElementById('chat-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendChatMessage(document.getElementById('chat-input').value);
+});
+
+document.querySelectorAll('.quick-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const action = btn.dataset.action;
+    const labels = {
+      synthese: 'Synthèse historique',
+      rediger:  'Rédiger réponse',
+      import:   'Import Millénium',
+      appels:   'Appels de fonds',
+    };
+    sendChatMessage(labels[action] || action);
+
+    // Switch to AI tab
+    document.querySelector('[data-tab="ai"]').click();
+  });
+});
+
+// ── Action cards data ──────────────────────────────────────────────────────
+
+const ACTIONS = [
+  { id: 'synthese',  icon: '📋', title: 'Synthèse historique', sub: 'Résumé IA de tous les échanges' },
+  { id: 'os',        icon: '🔧', title: 'Créer un OS',         sub: "Ordre de service depuis cet email" },
+  { id: 'pdf',       icon: '📄', title: 'Préparer PDF joint',  sub: 'Document à joindre en réponse' },
+  { id: 'import',    icon: '⬇️', title: 'Import Millénium',    sub: 'Rafraîchir les données dossier' },
+  { id: 'rediger',   icon: '✏️', title: 'Rédiger réponse',     sub: 'Brouillon IA pré-rempli' },
+  { id: 'ticket',    icon: '🎫', title: 'Créer ticket',        sub: "Ouvrir un ticket depuis l'email" },
+];
+
+function buildActions() {
+  const grid = document.getElementById('actions-grid');
+  grid.innerHTML = '';
+  ACTIONS.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'action-card';
+    card.innerHTML = `
+      <div class="action-icon">${a.icon}</div>
+      <div class="action-title">${a.title}</div>
+      <div class="action-sub">${a.sub}</div>
+    `;
+    card.addEventListener('click', () => {
+      showToast('⏳ Traitement en cours…');
+      console.log('[MAILO] Action:', a.id);
+
+      if (a.id === 'rediger') {
+        setTimeout(() => {
+          window.frontCompose && window.frontCompose.reply(generateReplyEmail());
+        }, 300);
+      }
+
+      if (a.id === 'synthese' || a.id === 'import') {
+        setTimeout(() => {
+          document.querySelector('[data-tab="ai"]').click();
+          sendChatMessage(a.title);
+        }, 400);
+      }
+    });
+    grid.appendChild(card);
+  });
+}
+
+// ── Seed inbox ─────────────────────────────────────────────────────────────
+
+async function seedInbox() {
+  const btn = document.getElementById('seed-btn');
+  btn.classList.add('loading');
+  showToast('📨 Envoi de 3 emails de test…', 3500);
+
+  try {
+    const resp = await fetch('/api/seed', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ inboxId: window.frontInboxId || null }),
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showToast('❌ ' + (data.error || 'Erreur API Front'), 4000);
+      console.error('[MAILO seed]', data);
+      return;
+    }
+
+    const ok   = data.results.filter(r => r.success).length;
+    const fail = data.results.filter(r => !r.success).length;
+
+    if (fail > 0) {
+      showToast(`⚠️ ${ok}/3 emails envoyés (${fail} erreur${fail > 1 ? 's' : ''})`, 4000);
+      data.results.filter(r => !r.success).forEach(r =>
+        console.error('[MAILO seed]', r.from, '→', r.error));
+    } else {
+      showToast('✅ 3 emails envoyés dans la boîte !', 2800);
+    }
+  } catch (err) {
+    showToast('❌ Erreur réseau : ' + err.message, 4000);
+    console.error('[MAILO seed]', err);
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+
+document.getElementById('seed-btn').addEventListener('click', seedInbox);
+
+// ── Tag color helper ───────────────────────────────────────────────────────
+
+const TAG_MAP = {
+  'Copropriété':          'tag-blue',
+  'Gestion locative':     'tag-orange',
+  'Fournisseur actif':    'tag-salmon',
+  'Syndic':               'tag-blue',
+  'Appel fonds en attente': 'tag-orange',
+  'Locataire actif':      'tag-green',
+  'Maintenance urgente':  'tag-red',
+  'Question financière':  'tag-orange',
+  'Administratif':        'tag-grey',
+  'Admin en cours':       'tag-grey',
+};
+
+function tagClass(label, color) {
+  if (TAG_MAP[label]) return TAG_MAP[label];
+  const m = { blue: 'tag-blue', orange: 'tag-orange', salmon: 'tag-salmon',
+              green: 'tag-green', teal: 'tag-teal', grey: 'tag-grey' };
+  return m[color] || 'tag-grey';
+}
+
+// ── renderPlugin (called by sdk-init.js) ──────────────────────────────────
+
+window.renderPlugin = function(ctx) {
+  // Hide loader, show app
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display     = 'flex';
+
+  // Store for chat + reply generation
+  chatCtx.contactName   = ctx.contact.name;
+  chatCtx.subject       = ctx.conversation.subject;
+  chatCtx.property      = ctx.contact.property;
+  chatCtx.replyContent  = ctx.replyContent || null;
+
+  // Contact card
+  document.getElementById('contact-avatar').textContent   = initials(ctx.contact.name);
+  document.getElementById('contact-name').textContent     = ctx.contact.name;
+  document.getElementById('contact-role').textContent     = ctx.contact.role;
+  document.getElementById('contact-property').textContent = ctx.contact.property;
+
+  if (!ctx.contact.milleniumLinked) {
+    document.getElementById('millenium-badge').style.display = 'none';
+  }
+
+  // Tag pills
+  const tagsEl = document.getElementById('contact-tags');
+  tagsEl.innerHTML = '';
+  (ctx.contact.tags || []).forEach(tag => {
+    const pill = document.createElement('span');
+    pill.className = 'tag-pill ' + tagClass(tag);
+    pill.textContent = tag;
+    tagsEl.appendChild(pill);
+  });
+
+  // Email card
+  document.getElementById('email-subject').textContent = ctx.conversation.subject;
+  document.getElementById('email-meta').textContent    =
+    `${ctx.conversation.date} · ${ctx.contact.name}`;
+  document.getElementById('email-preview').textContent = ctx.conversation.preview;
+
+  // Alerts
+  const alertList = document.getElementById('alert-list');
+  alertList.innerHTML = '';
+  (ctx.alerts || []).forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'alert-row';
+    const dot = document.createElement('div');
+    dot.className = 'alert-dot dot-' + a.level;
+    const text = document.createElement('div');
+    text.className = 'alert-text';
+    text.textContent = a.text;
+    row.appendChild(dot); row.appendChild(text);
+    alertList.appendChild(row);
+  });
+
+  // Properties
+  const propList = document.getElementById('properties-list');
+  propList.innerHTML = '';
+  (ctx.properties || []).forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'property-card';
+    const tagsHtml = (p.tags || []).map(t =>
+      `<span class="tag-pill ${tagClass(t.label, t.color)}">${t.label}</span>`
+    ).join('');
+    card.innerHTML = `
+      <div class="property-name">${p.name}</div>
+      <div class="property-detail">${p.type} · ${p.detail}</div>
+      <div class="property-tags">${tagsHtml}</div>
+    `;
+    propList.appendChild(card);
+  });
+
+  // Build actions grid
+  buildActions();
+
+  // Seed AI chat with per-contact analysis message (clear on each context change)
+  const chatContainer = document.getElementById('chat-messages');
+  chatContainer.innerHTML = '';
+  const aiIntro = ctx.aiMessage ||
+    `Bonjour ! J'ai analysé l'email de ${ctx.contact.name} et son dossier Millénium.\n\n` +
+    `Demande : "${ctx.conversation.subject}".\n\n` +
+    `Comment souhaitez-vous répondre ?`;
+  addMessage(aiIntro, 'ai');
+};
+</script>
+
+<!-- Front SDK bundle (auto-generated by server.js) -->
+<script src="bundle.js"></script>
+
+</body>
+</html>

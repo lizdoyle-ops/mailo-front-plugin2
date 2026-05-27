@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: mailo-front-plugin
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: FRONT_API_TOKEN
+        sync: false
+      - key: FRONT_INBOX_ID
+        sync: false
+      - key: NODE_ENV
+        value: production
