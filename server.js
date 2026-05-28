@@ -30,13 +30,18 @@ try {
 
 // ── Seed email definitions ───────────────────────────────────────────────────
 
-function getSeedEmails() {
+function uniqueRef() {
+  // Mirrors the Postman script: Math.floor(Math.random() * 1000) + currentTimestamp
   const ts = Math.floor(Date.now() / 1000);
+  return String(Math.floor(Math.random() * 1000) + ts);
+}
+
+function getSeedEmails() {
   return [
     {
-      from:     'leyton@finalproduction.club',
-      fromName: 'Leyton Bernard',
-      subject:  'Panne chaudière collective — Intervention urgente requise',
+      from:       'leyton@finalproduction.club',
+      fromName:   'Leyton Bernard',
+      subject:    'Panne chaudière collective — Intervention urgente requise',
       body: `<p>Bonjour,</p>
 <p>Je me permets de vous contacter en urgence concernant une panne de la chaudière collective au sein de la résidence <strong>RES LES AMANDIERS</strong>.</p>
 <p>La panne est survenue hier soir vers 21h. Plusieurs locataires se retrouvent sans chauffage ni eau chaude, situation particulièrement difficile pour les familles avec jeunes enfants.</p>
@@ -48,12 +53,13 @@ function getSeedEmails() {
 </ul>
 <p>Dans l'attente de votre retour rapide,</p>
 <p>Cordialement,<br/>Leyton Bernard</p>`,
-      externalId: `mailo-seed-leyton-${ts}-${crypto.randomBytes(4).toString('hex')}`,
+      externalId: uniqueRef(),
+      threadRef:  uniqueRef(),
     },
     {
-      from:     'sarah@zestymedia.club',
-      fromName: 'Sarah Vidal',
-      subject:  'Demande de détail charges locatives et appels de fonds 2025',
+      from:       'sarah@zestymedia.club',
+      fromName:   'Sarah Vidal',
+      subject:    'Demande de détail charges locatives et appels de fonds 2025',
       body: `<p>Madame, Monsieur,</p>
 <p>Je me permets de vous contacter afin d'obtenir des précisions concernant mes charges locatives pour l'exercice 2025 ainsi que les prochains appels de fonds pour le bien <strong>APPT 42 RUE DU COMMERCE</strong>.</p>
 <p>Plus précisément, je souhaiterais :</p>
@@ -65,12 +71,13 @@ function getSeedEmails() {
 <p>Pourriez-vous me transmettre ces informations dans les meilleurs délais ?</p>
 <p>Merci par avance pour votre retour.</p>
 <p>Cordialement,<br/>Sarah Vidal</p>`,
-      externalId: `mailo-seed-sarah-${ts}-${crypto.randomBytes(4).toString('hex')}`,
+      externalId: uniqueRef(),
+      threadRef:  uniqueRef(),
     },
     {
-      from:     'elias@auditlawyer.club',
-      fromName: 'Elias Moreau',
-      subject:  'Transmission documents — Changement mandataire syndic',
+      from:       'elias@auditlawyer.club',
+      fromName:   'Elias Moreau',
+      subject:    'Transmission documents — Changement mandataire syndic',
       body: `<p>Bonjour,</p>
 <p>Suite au changement de mandataire intervenu lors de la dernière assemblée générale de la <strong>SDC TOUR BELLEVUE</strong>, je vous adresse les documents nécessaires à la mise à jour administrative du dossier.</p>
 <p>Vous trouverez ci-joint :</p>
@@ -83,7 +90,8 @@ function getSeedEmails() {
 <p>Pourriez-vous confirmer la bonne réception de ces documents et me communiquer le délai de traitement prévu ?</p>
 <p>Dans l'attente de votre confirmation,</p>
 <p>Cordialement,<br/>Elias Moreau<br/>Audit Lawyer Club</p>`,
-      externalId: `mailo-seed-elias-${ts}-${crypto.randomBytes(4).toString('hex')}`,
+      externalId: uniqueRef(),
+      threadRef:  uniqueRef(),
     },
   ];
 }
@@ -119,9 +127,15 @@ function importMessage(token, inboxId, inboxAddress, msg) {
       subject:     msg.subject,
       body:        msg.body,
       body_format: 'html',
+      type:        'email',
       external_id: msg.externalId,
       created_at:  Math.floor(Date.now() / 1000),
-      metadata:    { is_inbound: true, is_archived: false, should_skip_rules: false },
+      metadata: {
+        thread_ref:        msg.threadRef,   // unique per email → separate threads
+        is_inbound:        true,
+        is_archived:       false,
+        should_skip_rules: false,
+      },
     });
 
     const options = {
