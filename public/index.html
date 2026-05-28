@@ -586,6 +586,21 @@
       padding: 8px 12px;
       font-size: 11px; color: var(--grey-400);
     }
+    .record-send-btn {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--teal-light);
+      border: 1px solid var(--teal);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .12s, transform .1s;
+      margin-left: 6px;
+    }
+    .record-send-btn:hover  { background: var(--teal); }
+    .record-send-btn:hover svg { stroke: #fff; }
+    .record-send-btn:active { transform: scale(.9); }
+    .record-send-btn svg    { display: block; stroke: var(--teal); }
 
     /* ── Loader ── */
     .loading-screen {
@@ -995,6 +1010,97 @@ document.querySelectorAll('.quick-btn').forEach(btn => {
   });
 });
 
+// ── Record email generator ────────────────────────────────────────────────
+
+function generateRecordEmail(sectionLabel, item) {
+  const contact  = chatCtx.contactName || 'Madame, Monsieur';
+  const property = chatCtx.property    || '';
+
+  const ICONS = {
+    'Factures':          '💶',
+    'Ordres de travail': '🔧',
+    'Devis':             '📋',
+    'Cas de support':    '🎫',
+    'Contrats':          '📄',
+  };
+  const icon = ICONS[sectionLabel] || '📎';
+
+  // Status colour mapping (inline for email clients)
+  function statusStyle(s) {
+    const v = (s || '').toLowerCase();
+    if (v.includes('pay') || v.includes('actif'))  return 'background:#ccfbf1;color:#0f766e;';
+    if (v.includes('ouvert'))                       return 'background:#dbeafe;color:#1d4ed8;';
+    if (v.includes('cours'))                        return 'background:#fef9c3;color:#854d0e;';
+    if (v.includes('attente'))                      return 'background:#ffedd5;color:#c2410c;';
+    return 'background:#f3f4f6;color:#374151;';
+  }
+
+  return `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+
+  <!-- Header -->
+  <tr><td style="background:#1a3a3a;padding:24px 32px;">
+    <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:3px;">EMERIA</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:3px;">Foncia · Service Client</div>
+  </td></tr>
+  <tr><td style="background:#0d9488;height:3px;"></td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:32px;color:#374151;font-size:14px;line-height:1.6;">
+    <p style="margin:0 0 20px;font-size:15px;">Bonjour <strong>${contact}</strong>,</p>
+    <p style="margin:0 0 20px;">Veuillez trouver ci-dessous le récapitulatif du document suivant concernant le bien <strong>${property}</strong> :</p>
+
+    <!-- Record card -->
+    <table width="100%" cellpadding="0" cellspacing="0"
+      style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:24px;">
+      <tr><td style="padding:16px 20px;">
+        <div style="font-size:13px;color:#6b7280;margin-bottom:4px;">${icon} ${sectionLabel}</div>
+        <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:12px;">${item.label}</div>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:4px 0;font-size:12px;color:#6b7280;width:50%;">Statut</td>
+            <td style="padding:4px 0;">
+              <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;${statusStyle(item.status)}">${item.status}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;font-size:12px;color:#6b7280;">Date</td>
+            <td style="padding:4px 0;font-size:13px;font-weight:600;color:#111827;">${item.date}</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;font-size:12px;color:#6b7280;">Bien</td>
+            <td style="padding:4px 0;font-size:13px;color:#374151;">${property}</td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+
+    <p style="margin:0 0 16px;">Pour toute question relative à ce document, n'hésitez pas à contacter votre gestionnaire ou à répondre à cet email.</p>
+    <div style="border-top:1px solid #e5e7eb;margin:24px 0;"></div>
+    <p style="margin:0;font-size:13px;color:#374151;">
+      Cordialement,<br>
+      <strong style="color:#1a3a3a;">L'équipe Emeria — Foncia Service Client</strong><br>
+      <span style="color:#9ca3af;font-size:12px;">✉ emeria-care@foncia.fr &nbsp;|&nbsp; 📞 01 XX XX XX XX</span>
+    </p>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:14px 32px;text-align:center;">
+    <p style="margin:0;font-size:11px;color:#9ca3af;">
+      © 2025 Emeria · Foncia Group — Ce message est confidentiel.
+    </p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`;
+}
+
 // ── Related records accordion ─────────────────────────────────────────────
 
 const RELATED_SECTIONS = [
@@ -1049,6 +1155,24 @@ function buildRelatedLists(records) {
       items.forEach(item => {
         const rec = document.createElement('div');
         rec.className = 'related-record';
+
+        // Send button
+        const sendBtn = document.createElement('button');
+        sendBtn.className = 'record-send-btn';
+        sendBtn.title = `Envoyer un récapitulatif de ce ${label.toLowerCase()}`;
+        sendBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>`;
+
+        sendBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const html = generateRecordEmail(label, item);
+          window.frontCompose && window.frontCompose.reply(html);
+          showToast(`📤 Récapitulatif ${label.toLowerCase()} en cours…`, 2000);
+        });
+
         rec.innerHTML = `
           <div class="related-record-label">${item.label}</div>
           <div class="related-record-meta">
@@ -1056,6 +1180,7 @@ function buildRelatedLists(records) {
             <span class="related-record-date">${item.date}</span>
           </div>
         `;
+        rec.appendChild(sendBtn);
         body.appendChild(rec);
       });
     }
