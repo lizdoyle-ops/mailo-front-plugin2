@@ -153,6 +153,71 @@ function importMessage(token, inboxId, inboxAddress, msg) {
   });
 }
 
+// ── Ordres de travail — data store ──────────────────────────────────────────
+
+const DATA_DIR = path.join(__dirname, 'data');
+const OT_FILE  = path.join(DATA_DIR, 'ordres-de-travail.json');
+
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+
+let ordresDeTravail = [];
+if (fs.existsSync(OT_FILE)) {
+  try { ordresDeTravail = JSON.parse(fs.readFileSync(OT_FILE, 'utf8')); }
+  catch { ordresDeTravail = []; }
+}
+
+// Seed initial records if store is empty
+if (ordresDeTravail.length === 0) {
+  ordresDeTravail = [
+    {
+      id: 'ot-001',
+      titre: 'Panne chaudière collective — Bât. A',
+      description: 'La chaudière collective est tombée en panne. Plusieurs locataires sans chauffage ni eau chaude.',
+      statut: 'En cours',
+      priorite: 'Urgente',
+      property: 'RES LES AMANDIERS',
+      contactEmail: 'leyton@finalproduction.club',
+      contactNom: 'Leyton Bernard',
+      assigneA: 'Mme Dupuis',
+      createdAt: '2026-01-15T08:30:00.000Z',
+      updatedAt: '2026-01-15T08:30:00.000Z',
+    },
+    {
+      id: 'ot-002',
+      titre: 'Réparation local poubelles — Bât. B',
+      description: 'Dégradation signalée dans le local poubelles. Réparation nécessaire.',
+      statut: 'En cours',
+      priorite: 'Normale',
+      property: 'SDC BLO VOLTAIRE',
+      contactEmail: 'damien@test.fr',
+      contactNom: 'Damien Pozzi',
+      assigneA: 'M. Arnaud',
+      createdAt: '2025-12-15T10:00:00.000Z',
+      updatedAt: '2025-12-15T10:00:00.000Z',
+    },
+    {
+      id: 'ot-003',
+      titre: 'Demande travaux fournisseur — Électricité',
+      description: "Autorisation requise pour travaux d'électricité par fournisseur agréé.",
+      statut: 'En attente',
+      priorite: 'Normale',
+      property: 'SDC BLO VOLTAIRE',
+      contactEmail: 'damien@test.fr',
+      contactNom: 'Damien Pozzi',
+      assigneA: 'M. Arnaud',
+      createdAt: '2025-12-10T09:15:00.000Z',
+      updatedAt: '2025-12-10T09:15:00.000Z',
+    },
+  ];
+  try { fs.writeFileSync(OT_FILE, JSON.stringify(ordresDeTravail, null, 2), 'utf8'); }
+  catch {}
+}
+
+function saveOT() {
+  try { fs.writeFileSync(OT_FILE, JSON.stringify(ordresDeTravail, null, 2), 'utf8'); }
+  catch (err) { console.error('⚠️  Could not persist ordres-de-travail:', err.message); }
+}
+
 // ── Express app ──────────────────────────────────────────────────────────────
 
 const app  = express();
@@ -217,6 +282,86 @@ app.post('/api/seed', async (req, res) => {
   const ok = results.filter((r) => r.success).length;
   console.log(`\n📨 Seed complete: ${ok}/${emails.length} imported into inbox ${inboxId}\n`);
   res.json({ inboxId, results });
+});
+
+// ── Ordres de travail API ────────────────────────────────────────────────────
+
+/**
+ * GET /api/ordres-de-travail
+ * List all work orders. Optional query filters:
+ *   ?property=RES%20LES%20AMANDIERS
+ *   ?statut=En%20cours
+ *   ?priorite=Urgente
+ *   ?contactEmail=leyton@finalproduction.club
+ */
+app.get('/api/ordres-de-travail', (req, res) => {
+  let results = [...ordresDeTravail];
+  const { property, statut, priorite, contactEmail } = req.query;
+  if (property)     results = results.filter(o => o.property?.toLowerCase().includes(property.toLowerCase()));
+  if (statut)       results = results.filter(o => o.statut?.toLowerCase() === statut.toLowerCase());
+  if (priorite)     results = results.filter(o => o.priorite?.toLowerCase() === priorite.toLowerCase());
+  if (contactEmail) results = results.filter(o => o.contactEmail?.toLowerCase() === contactEmail.toLowerCase());
+  res.json({ total: results.length, results });
+});
+
+/**
+ * GET /api/ordres-de-travail/:id
+ * Fetch a single work order by ID.
+ */
+app.get('/api/ordres-de-travail/:id', (req, res) => {
+  const ot = ordresDeTravail.find(o => o.id === req.params.id);
+  if (!ot) return res.status(404).json({ error: `Ordre de travail "${req.params.id}" introuvable.` });
+  res.json(ot);
+});
+
+/**
+ * POST /api/ordres-de-travail
+ * Create a new work order.
+ * Required body fields: titre, property
+ * Optional: description, statut, priorite, contactEmail, contactNom, assigneA
+ */
+app.post('/api/ordres-de-travail', (req, res) => {
+  const { titre, description, statut, priorite, property, contactEmail, contactNom, assigneA } = req.body;
+  if (!titre)    return res.status(400).json({ error: '`titre` est requis.' });
+  if (!property) return res.status(400).json({ error: '`property` est requis.' });
+
+  const now = new Date().toISOString();
+  const ot = {
+    id:           `ot-${crypto.randomBytes(4).toString('hex')}`,
+    titre,
+    description:  description  || '',
+    statut:       statut       || 'En attente',
+    priorite:     priorite     || 'Normale',
+    property,
+    contactEmail: contactEmail || '',
+    contactNom:   contactNom   || '',
+    assigneA:     assigneA     || '',
+    createdAt:    now,
+    updatedAt:    now,
+  };
+
+  ordresDeTravail.push(ot);
+  saveOT();
+  console.log(`  🔧  OT créé : ${ot.id} — ${ot.titre}`);
+  res.status(201).json(ot);
+});
+
+/**
+ * PATCH /api/ordres-de-travail/:id
+ * Update fields on an existing work order.
+ * Accepts any subset of: titre, description, statut, priorite, property,
+ *   contactEmail, contactNom, assigneA
+ */
+app.patch('/api/ordres-de-travail/:id', (req, res) => {
+  const idx = ordresDeTravail.findIndex(o => o.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: `Ordre de travail "${req.params.id}" introuvable.` });
+
+  const MUTABLE = ['titre', 'description', 'statut', 'priorite', 'property', 'contactEmail', 'contactNom', 'assigneA'];
+  MUTABLE.forEach(f => { if (req.body[f] !== undefined) ordresDeTravail[idx][f] = req.body[f]; });
+  ordresDeTravail[idx].updatedAt = new Date().toISOString();
+
+  saveOT();
+  res.json(ordresDeTravail[idx]);
 });
 
 app.listen(PORT, () => {
