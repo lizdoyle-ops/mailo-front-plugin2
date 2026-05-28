@@ -507,6 +507,86 @@
       cursor: pointer;
     }
 
+    /* ── Related records accordion ── */
+    .related-list {
+      margin: 0 10px 12px;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .related-row {
+      background: #fff;
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .related-row-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background .12s;
+    }
+    .related-row-header:hover { background: var(--grey-50); }
+    .related-row-icon { font-size: 14px; flex-shrink: 0; }
+    .related-row-label {
+      font-size: 12px; font-weight: 600;
+      color: var(--grey-900); flex: 1;
+    }
+    .related-row-count {
+      background: var(--grey-100);
+      border-radius: var(--radius-pill);
+      padding: 1px 8px;
+      font-size: 10px; font-weight: 600;
+      color: var(--grey-700);
+      min-width: 20px; text-align: center;
+    }
+    .related-row-chevron {
+      color: var(--grey-400);
+      font-size: 16px; font-weight: 300;
+      transition: transform .2s;
+      line-height: 1;
+    }
+    .related-row.open .related-row-chevron { transform: rotate(90deg); }
+    .related-row-body {
+      display: none;
+      border-top: 1px solid var(--grey-100);
+    }
+    .related-row.open .related-row-body { display: block; }
+    .related-record {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--grey-100);
+      cursor: default;
+      transition: background .1s;
+    }
+    .related-record:last-child { border-bottom: none; }
+    .related-record:hover { background: var(--grey-50); }
+    .related-record-label {
+      font-size: 11px; color: var(--grey-700);
+      flex: 1; line-height: 1.4;
+    }
+    .related-record-meta {
+      display: flex; flex-direction: column;
+      align-items: flex-end; gap: 2px; flex-shrink: 0;
+    }
+    .record-status {
+      font-size: 9px; font-weight: 600;
+      padding: 1px 6px; border-radius: var(--radius-pill);
+      white-space: nowrap;
+    }
+    .rs-payee    { background: var(--teal-light);   color: #0f766e; }
+    .rs-actif    { background: var(--green-light);  color: #15803d; }
+    .rs-ouvert   { background: var(--blue-light);   color: #1d4ed8; }
+    .rs-cours    { background: #fef9c3;             color: #854d0e; }
+    .rs-attente  { background: var(--orange-light); color: #c2410c; }
+    .rs-propose  { background: var(--grey-100);     color: var(--grey-700); }
+    .related-record-date {
+      font-size: 9px; color: var(--grey-400);
+    }
+    .related-empty {
+      padding: 8px 12px;
+      font-size: 11px; color: var(--grey-400);
+    }
+
     /* ── Loader ── */
     .loading-screen {
       position: fixed; inset: 0;
@@ -617,7 +697,9 @@
 
     <div class="section-header">Données Millénium — Biens gérés</div>
     <div id="properties-list"></div>
-    <div style="height:12px;"></div>
+
+    <div class="section-header">Données Millénium — Enregistrements liés</div>
+    <div id="related-lists"></div>
 
   </div>
 
@@ -913,6 +995,81 @@ document.querySelectorAll('.quick-btn').forEach(btn => {
   });
 });
 
+// ── Related records accordion ─────────────────────────────────────────────
+
+const RELATED_SECTIONS = [
+  { key: 'factures',      icon: '💶', label: 'Factures' },
+  { key: 'ordresTravail', icon: '🔧', label: 'Ordres de travail' },
+  { key: 'devis',         icon: '📋', label: 'Devis' },
+  { key: 'casDeSoutien',  icon: '🎫', label: 'Cas de support' },
+  { key: 'contrats',      icon: '📄', label: 'Contrats' },
+];
+
+function recordStatusClass(status) {
+  const s = (status || '').toLowerCase();
+  if (s.includes('pay'))      return 'rs-payee';
+  if (s.includes('actif') || s.includes('active')) return 'rs-actif';
+  if (s.includes('ouvert') || s.includes('open'))  return 'rs-ouvert';
+  if (s.includes('cours'))    return 'rs-cours';
+  if (s.includes('attente'))  return 'rs-attente';
+  return 'rs-propose';
+}
+
+function buildRelatedLists(records) {
+  const container = document.getElementById('related-lists');
+  container.innerHTML = '';
+  if (!records) return;
+
+  const list = document.createElement('div');
+  list.className = 'related-list';
+
+  RELATED_SECTIONS.forEach(({ key, icon, label }) => {
+    const items = records[key] || [];
+
+    const row = document.createElement('div');
+    row.className = 'related-row';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'related-row-header';
+    header.innerHTML = `
+      <span class="related-row-icon">${icon}</span>
+      <span class="related-row-label">${label}</span>
+      <span class="related-row-count">${items.length}</span>
+      <span class="related-row-chevron">›</span>
+    `;
+
+    // Body
+    const body = document.createElement('div');
+    body.className = 'related-row-body';
+
+    if (items.length === 0) {
+      body.innerHTML = `<div class="related-empty">Aucun enregistrement</div>`;
+    } else {
+      items.forEach(item => {
+        const rec = document.createElement('div');
+        rec.className = 'related-record';
+        rec.innerHTML = `
+          <div class="related-record-label">${item.label}</div>
+          <div class="related-record-meta">
+            <span class="record-status ${recordStatusClass(item.status)}">${item.status}</span>
+            <span class="related-record-date">${item.date}</span>
+          </div>
+        `;
+        body.appendChild(rec);
+      });
+    }
+
+    header.addEventListener('click', () => row.classList.toggle('open'));
+
+    row.appendChild(header);
+    row.appendChild(body);
+    list.appendChild(row);
+  });
+
+  container.appendChild(list);
+}
+
 // ── Action cards data ──────────────────────────────────────────────────────
 
 const ACTIONS = [
@@ -1090,6 +1247,9 @@ window.renderPlugin = function(ctx) {
     `;
     propList.appendChild(card);
   });
+
+  // Related records accordion
+  buildRelatedLists(ctx.relatedRecords);
 
   // Build actions grid
   buildActions();

@@ -47,6 +47,24 @@ const MOCK_BY_EMAIL = {
       ],
       closing: "Nous vous tiendrons informé de l'avancement par retour d'email. Nous nous excusons pour la gêne occasionnée.",
     },
+    relatedRecords: {
+      factures:      [
+        { label: 'Charges Q3 2025 — RES LES AMANDIERS', status: 'Payée', date: '01/10/2025' },
+        { label: 'Intervention urgence chaudière', status: 'En attente', date: '15/01/2026' },
+      ],
+      ordresTravail: [
+        { label: 'Panne chaudière collective — Bât. A', status: 'En cours', date: '15/01/2026' },
+      ],
+      devis:         [
+        { label: 'Remplacement chaudière Frisquet — #2026-089', status: 'Proposé', date: '16/01/2026' },
+      ],
+      casDeSoutien:  [
+        { label: 'Ticket #4521 — Panne chaudière collective', status: 'Ouvert', date: '15/01/2026' },
+      ],
+      contrats:      [
+        { label: 'Contrat syndic 2025 — RES LES AMANDIERS', status: 'Actif', date: '01/01/2025' },
+      ],
+    },
   },
 
   'sarah@zestymedia.club': {
@@ -90,6 +108,21 @@ const MOCK_BY_EMAIL = {
         "L'augmentation de 12 % constatée est liée à la hausse des coûts énergétiques communs (chauffage collectif, éclairage parties communes)",
       ],
       closing: "Votre gestionnaire M. Lambert reste disponible pour tout complément d'information. N'hésitez pas à nous recontacter.",
+    },
+    relatedRecords: {
+      factures:      [
+        { label: "Régularisation charges 2024", status: 'En attente', date: '10/01/2026' },
+        { label: 'Appel de fonds Q1 2025 — 1 240 €', status: 'Payée', date: '31/01/2025' },
+        { label: 'Appel de fonds Q4 2024 — 1 100 €', status: 'Payée', date: '01/10/2024' },
+      ],
+      ordresTravail: [],
+      devis:         [],
+      casDeSoutien:  [
+        { label: 'Demande détail charges 2024 — #3204', status: 'Ouvert', date: '12/01/2026' },
+      ],
+      contrats:      [
+        { label: 'Bail habitation — APPT 42 RUE DU COMMERCE', status: 'Actif', date: '01/03/2022' },
+      ],
     },
   },
 
@@ -135,6 +168,20 @@ const MOCK_BY_EMAIL = {
       ],
       closing: "La mise à jour administrative de votre dossier sera effectuée dans un délai de <strong>5 jours ouvrés</strong>. Vous recevrez une confirmation par email à l'issue de cette démarche. Votre gestionnaire M. Petit reste à votre disposition.",
     },
+    relatedRecords: {
+      factures:      [
+        { label: 'Honoraires syndic 2025 — SDC TOUR BELLEVUE', status: 'En attente', date: '05/01/2026' },
+      ],
+      ordresTravail: [],
+      devis:         [],
+      casDeSoutien:  [
+        { label: 'Changement mandataire — mise à jour dossier', status: 'Ouvert', date: '06/01/2026' },
+        { label: 'Validation documents AG 03/01/2025', status: 'En cours', date: '03/01/2025' },
+      ],
+      contrats:      [
+        { label: 'Mandat de syndic 2025 — SDC TOUR BELLEVUE', status: 'Actif', date: '03/01/2025' },
+      ],
+    },
   },
 };
 
@@ -175,6 +222,26 @@ const DEFAULT_MOCK = {
   ],
   aiMessage: null, // will be generated from subject
   replyContent: null,
+  relatedRecords: {
+    factures:      [
+      { label: 'Appel de fonds Q4 2025 — SDC BLO VOLTAIRE', status: 'En attente', date: '01/10/2025' },
+      { label: 'Charges 2024 — Régularisation', status: 'Payée', date: '30/06/2025' },
+    ],
+    ordresTravail: [
+      { label: 'Réparation local poubelles — Bât. B', status: 'En cours', date: '15/12/2025' },
+      { label: 'Demande travaux fournisseur — Électricité', status: 'En attente', date: '10/12/2025' },
+    ],
+    devis:         [
+      { label: 'Réfection local poubelles — Devis #2025-442', status: 'Proposé', date: '12/12/2025' },
+    ],
+    casDeSoutien:  [
+      { label: 'Dégradation local poubelles — #3891', status: 'Ouvert', date: '14/12/2025' },
+      { label: "Assurance MRCI — demande copie contrat", status: 'En cours', date: '19/12/2025' },
+    ],
+    contrats:      [
+      { label: 'Contrat syndic 2025 — SDC BLO VOLTAIRE', status: 'Actif', date: '01/01/2025' },
+    ],
+  },
 };
 
 // ── Extract email from SDK contact (try every known field) ───────────────────
@@ -222,10 +289,11 @@ function resolveContext(sdkCtx) {
         (conv.latestMessage && conv.latestMessage.text) ||
         mock.conversation.preview,
     },
-    alerts:       mock.alerts,
-    properties:   mock.properties,
-    aiMessage:    mock.aiMessage,
-    replyContent: mock.replyContent,
+    alerts:         mock.alerts,
+    properties:     mock.properties,
+    aiMessage:      mock.aiMessage,
+    replyContent:   mock.replyContent,
+    relatedRecords: mock.relatedRecords,
   };
 }
 
