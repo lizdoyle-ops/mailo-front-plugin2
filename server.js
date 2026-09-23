@@ -1,11 +1,12 @@
 require('dotenv').config();
 
-const { buildSync } = require('esbuild');
-const express = require('express');
-const https   = require('https');
-const path    = require('path');
-const fs      = require('fs');
-const crypto  = require('crypto');
+const { buildSync }              = require('esbuild');
+const express                    = require('express');
+const https                      = require('https');
+const path                       = require('path');
+const fs                         = require('fs');
+const crypto                     = require('crypto');
+const { runAgent, classifyAndDraft } = require('./src/agent');
 
 // Ensure public directory exists
 if (!fs.existsSync('public')) fs.mkdirSync('public');
@@ -376,6 +377,96 @@ app.patch('/api/ordres-de-travail/:id', (req, res) => {
 
   saveOT();
   res.json(ordresDeTravail[idx]);
+});
+
+// ── BYOA Agent endpoints ─────────────────────────────────────────────────────
+
+/**
+ * POST /api/agent
+ * Front webhook — called when a conversation is assigned to the AI teammate.
+ * Payload shape varies by Front version; we try to extract conversation ID
+ * and the latest message from whatever Front sends.
+ */
+app.post('/api/agent', async (req, res) => {
+  // Verify signing secret if configured
+  const secret = process.env.FRONT_WEBHOOK_SECRET;
+  if (secret) {
+    const sig  = req.headers['x-front-signature'] || '';
+    const body = JSON.stringify(req.body);
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(body)
+      .digest('base64');
+    if (sig !== expected) {
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+  }
+
+  const payload = req.body;
+
+  // Extract conversation ID — Front can send it in several places
+  const conversationId =
+    payload.conversation?.id ||
+    payload.payload?.id ||
+    payload.id ||
+    null;
+
+  // Extract latest message
+  const msg =
+    payload.message ||
+    payload.payload?.latest_message ||
+    payload.conversation?.latest_message ||
+    null;
+
+  if (!conversationId || !msg) {
+    console.warn('[MAILO AGENT] Webhook missing conversation or message:', JSON.stringify(payload).slice(0, 200));
+    return res.status(200).json({ status: 'ignored', reason: 'missing conversation or message' });
+  }
+
+  const emailData = {
+    from:     msg.from?.handle  || msg.author?.handle || '',
+    fromName: msg.from?.name    || msg.author?.name   || '',
+    subject:  payload.conversation?.subject || payload.payload?.subject || '',
+    bodyText: msg.text || msg.body || '',
+  };
+
+  // Respond to Front immediately (it expects a fast 200)
+  res.status(200).json({ status: 'processing' });
+
+  // Run agent asynchronously
+  try {
+    await runAgent(conversationId, emailData);
+  } catch (err) {
+    console.error('[MAILO AGENT] Error:', err.message);
+  }
+});
+
+/**
+ * POST /api/agent/test
+ * Local test endpoint — run the agent against any email payload.
+ * If conversationId is provided, creates a real draft + tag in Front.
+ * Without it, returns what the agent would do (dry run).
+ *
+ * Body: { from, fromName, subject, bodyText, conversationId? }
+ */
+app.post('/api/agent/test', async (req, res) => {
+  const { from, fromName, subject, bodyText, conversationId } = req.body;
+
+  if (!from || !subject || !bodyText) {
+    return res.status(400).json({ error: '`from`, `subject`, and `bodyText` are required.' });
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set in .env' });
+  }
+
+  try {
+    const result = await runAgent(conversationId || null, { from, fromName, subject, bodyText });
+    res.json(result);
+  } catch (err) {
+    console.error('[MAILO AGENT] Test error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.listen(PORT, () => {

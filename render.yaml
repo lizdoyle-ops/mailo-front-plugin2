@@ -9,5 +9,15 @@ services:
         sync: false
       - key: FRONT_INBOX_ID
         sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: FRONT_CLIENT_ID
+        sync: false
+      - key: FRONT_CLIENT_SECRET
+        sync: false
+      - key: FRONT_OAUTH_URL
+        sync: false
+      - key: FRONT_WEBHOOK_SECRET
+        sync: false
       - key: NODE_ENV
         value: production
