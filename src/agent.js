@@ -54,7 +54,7 @@ Quand tu reçois un ID de conversation Front, tu dois :
 1. Appeler read_conversation pour lire l'email entrant
 2. Classer l'email dans l'un des cas d'usage prioritaires Emeria
 3. Rédiger un brouillon de réponse professionnel en français
-4. Appeler create_draft pour créer le brouillon avec shared: true
+4. Appeler create_draft pour créer le brouillon — OBLIGATOIRE: passer shared=true
 
 ## Cas d'usage :
 - BREAKDOWN   : Signalement panne ou sinistre, demande de suivi intervention ou réparation
@@ -98,7 +98,7 @@ async function runAgent(conversationId, _unused, teammateId) {
     messages: [
       {
         role:    'user',
-        content: `Traite la conversation Front : ${conversationId}. Lis l'email avec read_conversation, classe-le, rédige un brouillon en français, puis crée-le avec create_draft (shared: true).`,
+        content: `Traite la conversation Front : ${conversationId}. Lis l'email avec read_conversation, classe-le, rédige un brouillon en français, puis crée-le avec create_draft. IMPORTANT: tu dois TOUJOURS passer shared=true à create_draft sinon le brouillon sera invisible pour l'équipe.`,
       },
     ],
   });
