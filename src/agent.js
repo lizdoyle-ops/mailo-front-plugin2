@@ -46,6 +46,44 @@ async function getMcpToken() {
   });
 }
 
+// ── REST API: create draft as Reemia ─────────────────────────────────────────
+
+const REEMIA_TEAMMATE_ID = 'tea_3pcgd';
+
+function createDraftViaRest(conversationId, bodyHtml) {
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify({
+      author_id:   REEMIA_TEAMMATE_ID,
+      body:        bodyHtml,
+      body_format: 'html',
+      mode:        'shared',
+    });
+    const req = https.request({
+      hostname: 'api2.frontapp.com',
+      path:     `/conversations/${conversationId}/drafts`,
+      method:   'POST',
+      headers:  {
+        'Authorization': `Bearer ${process.env.FRONT_API_TOKEN}`,
+        'Content-Type':  'application/json',
+        'Content-Length': Buffer.byteLength(payload),
+      },
+    }, (res) => {
+      let data = '';
+      res.on('data', c => { data += c; });
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(JSON.parse(data));
+        } else {
+          reject(new Error(`create_draft REST failed ${res.statusCode}: ${data}`));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
+}
+
 // ── System prompt ────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `Tu es MAILO, l'assistant IA du Service Client Emeria (groupe Foncia), expert en gestion immobilière française.
@@ -54,7 +92,10 @@ Quand tu reçois un ID de conversation Front, tu dois :
 1. Appeler read_conversation pour lire l'email entrant
 2. Classer l'email dans l'un des cas d'usage prioritaires Emeria
 3. Rédiger un brouillon de réponse professionnel en français
-4. Appeler create_draft pour créer le brouillon — OBLIGATOIRE: passer shared=true
+4. Retourner un objet JSON UNIQUEMENT avec cette structure exacte (sans markdown, sans texte avant ou après) :
+{"category":"<CATÉGORIE>","draft":"<BROUILLON EN HTML>"}
+
+NE PAS appeler create_draft — le système s'en charge séparément.
 
 ## Cas d'usage :
 - BREAKDOWN   : Signalement panne ou sinistre, demande de suivi intervention ou réparation
@@ -75,12 +116,12 @@ Quand tu reçois un ID de conversation Front, tu dois :
 
 // ── Agentic loop via Front MCP ───────────────────────────────────────────────
 
-async function runAgent(conversationId, _unused, teammateId) {
+async function runAgent(conversationId, _unused, _teammateId) {
   const t0  = Date.now();
   const ms  = () => `+${Date.now() - t0}ms`;
   const log = (...a) => console.log('[MAILO AGENT]', ...a);
 
-  log(`▶ conversation=${conversationId} | author=${teammateId || 'mcp_user'}`);
+  log(`▶ conversation=${conversationId} | author=reemia (${REEMIA_TEAMMATE_ID})`);
 
   const mcpToken = await getMcpToken();
   log(`  ✓ MCP token ${ms()}`);
@@ -101,7 +142,7 @@ async function runAgent(conversationId, _unused, teammateId) {
     messages: [
       {
         role:    'user',
-        content: `Traite la conversation Front : ${conversationId}. Lis l'email avec read_conversation, classe-le, rédige un brouillon en français, puis crée-le avec create_draft. IMPORTANT: tu dois TOUJOURS passer shared=true à create_draft sinon le brouillon sera invisible pour l'équipe.`,
+        content: `Traite la conversation Front : ${conversationId}. Lis l'email avec read_conversation, classe-le, et retourne un JSON {"category":"...","draft":"..."} avec le brouillon en HTML. NE PAS appeler create_draft.`,
       },
     ],
   });
@@ -111,9 +152,31 @@ async function runAgent(conversationId, _unused, teammateId) {
   const tools = response.content.filter(b => b.type === 'tool_use').map(b => b.name);
   if (tools.length) log(`  → MCP tools called: ${tools.join(', ')}`);
 
-  const text = response.content.find(b => b.type === 'text')?.text || '';
-  if (text) log('  ✓', text.slice(0, 150));
+  const text = response.content.find(b => b.type === 'text')?.text?.trim() || '';
 
+  // Parse JSON from Claude's response
+  let category = 'OTHER';
+  let draftBody = '';
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON found in response');
+    const parsed = JSON.parse(jsonMatch[0]);
+    category  = parsed.category || 'OTHER';
+    draftBody = parsed.draft    || '';
+  } catch (err) {
+    log(`  ⚠ JSON parse error: ${err.message} — raw: ${text.slice(0, 200)}`);
+  }
+
+  log(`  ✓ category=${category} ${ms()}`);
+
+  if (!draftBody) {
+    log('  ⚠ No draft body extracted, skipping create');
+    return;
+  }
+
+  // Create draft via REST as Reemia
+  const draft = await createDraftViaRest(conversationId, draftBody);
+  log(`  ✓ Draft created (REST) id=${draft.id} author=reemia ${ms()}`);
   log(`  ✅ Total: ${ms()}`);
 }
 
