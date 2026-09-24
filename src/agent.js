@@ -76,11 +76,14 @@ Quand tu reçois un ID de conversation Front, tu dois :
 // ── Agentic loop via Front MCP ───────────────────────────────────────────────
 
 async function runAgent(conversationId, _unused, teammateId) {
+  const t0  = Date.now();
+  const ms  = () => `+${Date.now() - t0}ms`;
   const log = (...a) => console.log('[MAILO AGENT]', ...a);
+
   log(`▶ conversation=${conversationId} | author=${teammateId || 'mcp_user'}`);
 
   const mcpToken = await getMcpToken();
-  log('  ✓ MCP token obtained');
+  log(`  ✓ MCP token ${ms()}`);
 
   const response = await anthropic.beta.messages.create({
     model:      'claude-haiku-4-5-20251001',
@@ -103,15 +106,15 @@ async function runAgent(conversationId, _unused, teammateId) {
     ],
   });
 
-  log(`  stop_reason: ${response.stop_reason}`);
+  log(`  ✓ Claude done (${response.stop_reason}) ${ms()}`);
 
-  for (const block of response.content) {
-    if (block.type === 'text') {
-      log('  ✓', block.text.slice(0, 200));
-    } else if (block.type === 'tool_use') {
-      log(`  → MCP tool: ${block.name}`);
-    }
-  }
+  const tools = response.content.filter(b => b.type === 'tool_use').map(b => b.name);
+  if (tools.length) log(`  → MCP tools called: ${tools.join(', ')}`);
+
+  const text = response.content.find(b => b.type === 'text')?.text || '';
+  if (text) log('  ✓', text.slice(0, 150));
+
+  log(`  ✅ Total: ${ms()}`);
 }
 
 module.exports = { runAgent };
