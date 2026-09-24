@@ -416,9 +416,11 @@ app.post('/api/agent', async (req, res) => {
 
   console.log('[MAILO AGENT] Webhook payload:', JSON.stringify(payload).slice(0, 300));
 
-  // Only process assign events — ignore unassign, mention, test, etc.
+  // Process assign and mention events; ignore everything else
   const eventType = payload.type || '';
-  if (eventType && eventType !== 'assign' && !payload.event_id?.startsWith('evt_test')) {
+  const isTest    = payload.event_id?.startsWith('evt_test');
+  const allowed   = ['assign', 'mention'];
+  if (eventType && !allowed.includes(eventType) && !isTest) {
     console.log('[MAILO AGENT] Skipping event type:', eventType);
     return res.status(200).json({ status: 'ignored', reason: `event type: ${eventType}` });
   }
