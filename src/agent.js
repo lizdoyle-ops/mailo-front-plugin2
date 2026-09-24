@@ -1,18 +1,60 @@
 require('dotenv').config();
 
 const Anthropic = require('@anthropic-ai/sdk');
+const https     = require('https');
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// ── MCP OAuth token cache ────────────────────────────────────────────────────
+
+let _mcpTokenCache = null; // { token, expiresAt }
+
+async function getMcpToken() {
+  if (_mcpTokenCache && Date.now() < _mcpTokenCache.expiresAt) {
+    return _mcpTokenCache.token;
+  }
+
+  const body = [
+    'grant_type=refresh_token',
+    `client_id=${encodeURIComponent(process.env.FRONT_MCP_CLIENT_ID)}`,
+    `client_secret=${encodeURIComponent(process.env.FRONT_MCP_CLIENT_SECRET)}`,
+    `refresh_token=${encodeURIComponent(process.env.FRONT_MCP_REFRESH_TOKEN)}`,
+  ].join('&');
+
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: 'app.frontapp.com',
+      path:     '/oauth/token',
+      method:   'POST',
+      headers:  { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) },
+    }, (res) => {
+      let data = '';
+      res.on('data', c => { data += c; });
+      res.on('end', () => {
+        const json = JSON.parse(data);
+        if (!json.access_token) return reject(new Error(`MCP token refresh failed: ${data}`));
+        _mcpTokenCache = {
+          token:     json.access_token,
+          expiresAt: Date.now() + ((json.expires_in || 900) - 30) * 1000,
+        };
+        resolve(_mcpTokenCache.token);
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
 
 // ── System prompt ────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `Tu es MAILO, l'assistant IA du Service Client Emeria (groupe Foncia), expert en gestion immobilière française.
 
 Quand tu reçois un ID de conversation Front, tu dois :
-1. Utiliser read_conversation pour lire l'email entrant
+1. Appeler read_conversation pour lire l'email entrant
 2. Classer l'email dans l'un des cas d'usage prioritaires Emeria
 3. Rédiger un brouillon de réponse professionnel en français
-4. Utiliser create_draft pour créer le brouillon (shared: true)
+4. Appeler create_draft pour créer le brouillon avec shared: true
 
 ## Cas d'usage :
 - BREAKDOWN   : Signalement panne ou sinistre, demande de suivi intervention ou réparation
@@ -29,15 +71,16 @@ Quand tu reçois un ID de conversation Front, tu dois :
 - Accuser réception et valider la demande
 - Donner un délai de traitement concret si pertinent
 - Ne pas inventer d'informations factuelles
-- Terminer par : "Cordialement,<br>L'équipe Emeria — Foncia Service Client"
-- Toujours passer shared: true à create_draft`;
+- Terminer par : "Cordialement,<br>L'équipe Emeria — Foncia Service Client"`;
 
 // ── Agentic loop via Front MCP ───────────────────────────────────────────────
 
 async function runAgent(conversationId, _unused, teammateId) {
   const log = (...a) => console.log('[MAILO AGENT]', ...a);
+  log(`▶ conversation=${conversationId} | author=${teammateId || 'mcp_user'}`);
 
-  log(`▶ conversation=${conversationId} | author=${teammateId || 'api_token'}`);
+  const mcpToken = await getMcpToken();
+  log('  ✓ MCP token obtained');
 
   const response = await anthropic.beta.messages.create({
     model:      'claude-haiku-4-5-20251001',
@@ -48,7 +91,7 @@ async function runAgent(conversationId, _unused, teammateId) {
         type:                'url',
         url:                 'https://mcp.frontapp.com/mcp',
         name:                'front',
-        authorization_token: process.env.FRONT_API_TOKEN,
+        authorization_token: mcpToken,
       },
     ],
     system:   SYSTEM_PROMPT,
@@ -66,9 +109,7 @@ async function runAgent(conversationId, _unused, teammateId) {
     if (block.type === 'text') {
       log('  ✓', block.text.slice(0, 200));
     } else if (block.type === 'tool_use') {
-      log(`  → tool called: ${block.name}`);
-    } else if (block.type === 'tool_result') {
-      log(`  ← tool result: ${String(block.content).slice(0, 100)}`);
+      log(`  → MCP tool: ${block.name}`);
     }
   }
 }
