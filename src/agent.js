@@ -208,26 +208,29 @@ async function resolveChannelId(inboxId) {
 }
 
 // Create a reply draft on a conversation
-async function createReplyDraft(conversationId, replySubject, replyBodyHtml) {
+async function createReplyDraft(conversationId, replySubject, replyBodyHtml, authorId) {
   const inboxes   = await frontCall('GET', `/conversations/${conversationId}/inboxes`, null);
   const inboxId   = inboxes._results?.[0]?.id;
   const channelId = await resolveChannelId(inboxId);
 
-  return frontCall('POST', `/conversations/${conversationId}/drafts`, {
+  const body = {
     channel_id: channelId,
     body:       replyBodyHtml,
     subject:    replySubject,
     type:       'reply',
     draft_mode: 'shared',
-  });
+  };
+  if (authorId) body.author_id = authorId;
+
+  return frontCall('POST', `/conversations/${conversationId}/drafts`, body);
 }
 
 // ── Main agent entry point ───────────────────────────────────────────────────
 
-async function runAgent(conversationId, emailData) {
+async function runAgent(conversationId, emailData, teammateId) {
   const log = (...a) => console.log('[MAILO AGENT]', ...a);
 
-  log(`▶ Processing conversation ${conversationId || '(no id — dry run)'}`);
+  log(`▶ Processing conversation ${conversationId || '(no id — dry run)'} | author: ${teammateId || 'api_token'}`);
 
   // Fetch conversation + messages in parallel when not provided by caller
   if (!emailData && conversationId) {
@@ -263,7 +266,7 @@ async function runAgent(conversationId, emailData) {
   // 2. Create reply draft
   let draftId = null;
   try {
-    const draft = await createReplyDraft(conversationId, result.replySubject, result.replyBodyHtml);
+    const draft = await createReplyDraft(conversationId, result.replySubject, result.replyBodyHtml, teammateId);
     draftId = draft.id;
     log(`  ✅ Draft created: ${draftId}`);
   } catch (err) {

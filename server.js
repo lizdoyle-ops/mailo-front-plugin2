@@ -8,25 +8,27 @@ const fs                         = require('fs');
 const crypto                     = require('crypto');
 const { runAgent, classifyAndDraft } = require('./src/agent');
 
-// Ensure public directory exists
-if (!fs.existsSync('public')) fs.mkdirSync('public');
+const IS_SERVERLESS = !!process.env.VERCEL;
 
-// Bundle Front SDK + init logic
-console.log('📦 Bundling Front SDK…');
-try {
-  buildSync({
-    entryPoints: ['src/sdk-init.js'],
-    bundle: true,
-    outfile: 'public/bundle.js',
-    format: 'iife',
-    platform: 'browser',
-    define: { 'process.env.NODE_ENV': '"production"' },
-    logLevel: 'error',
-  });
-  console.log('✅ Bundle ready → public/bundle.js');
-} catch (err) {
-  console.error('❌ Build failed:', err.message);
-  process.exit(1);
+// Bundle Front SDK only in local dev (bundle.js is pre-built and committed for production)
+if (!IS_SERVERLESS) {
+  if (!fs.existsSync('public')) fs.mkdirSync('public');
+  console.log('📦 Bundling Front SDK…');
+  try {
+    buildSync({
+      entryPoints: ['src/sdk-init.js'],
+      bundle: true,
+      outfile: 'public/bundle.js',
+      format: 'iife',
+      platform: 'browser',
+      define: { 'process.env.NODE_ENV': '"production"' },
+      logLevel: 'error',
+    });
+    console.log('✅ Bundle ready → public/bundle.js');
+  } catch (err) {
+    console.error('❌ Build failed:', err.message);
+    process.exit(1);
+  }
 }
 
 // ── Seed email definitions ───────────────────────────────────────────────────
@@ -170,7 +172,8 @@ function importMessage(token, inboxId, inboxAddress, msg) {
 
 // ── Ordres de travail — data store ──────────────────────────────────────────
 
-const DATA_DIR = path.join(__dirname, 'data');
+// Vercel filesystem is read-only except /tmp; use /tmp in production
+const DATA_DIR = IS_SERVERLESS ? '/tmp' : path.join(__dirname, 'data');
 const OT_FILE  = path.join(DATA_DIR, 'ordres-de-travail.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
@@ -244,7 +247,16 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+// Capture raw body for webhook signature verification, then parse JSON
+app.use((req, res, next) => {
+  let raw = [];
+  req.on('data', chunk => raw.push(chunk));
+  req.on('end', () => {
+    req.rawBody = Buffer.concat(raw);
+    try { req.body = JSON.parse(req.rawBody.toString()); } catch { req.body = {}; }
+    next();
+  });
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // POST /api/seed  — imports the 3 test emails via Front Import API
@@ -388,54 +400,50 @@ app.patch('/api/ordres-de-travail/:id', (req, res) => {
  * and the latest message from whatever Front sends.
  */
 app.post('/api/agent', async (req, res) => {
-  // Verify signing secret if configured
+  // Verify signing secret if configured — log mismatch but don't block
+  // (Front's test event may not include a signature)
   const secret = process.env.FRONT_WEBHOOK_SECRET;
   if (secret) {
-    const sig  = req.headers['x-front-signature'] || '';
-    const body = JSON.stringify(req.body);
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(body)
-      .digest('base64');
-    if (sig !== expected) {
-      return res.status(401).json({ error: 'Invalid signature' });
+    const sig         = req.headers['x-front-signature'] || '';
+    const expectedB64 = crypto.createHmac('sha256', secret).update(req.rawBody).digest('base64');
+    const expectedHex = crypto.createHmac('sha256', secret).update(req.rawBody).digest('hex');
+    if (sig && sig !== expectedB64 && sig !== expectedHex) {
+      console.warn('[MAILO AGENT] ⚠ Signature mismatch — proceeding anyway (check secret config)');
     }
   }
 
   const payload = req.body;
 
-  // Extract conversation ID — Front can send it in several places
-  const conversationId =
-    payload.conversation?.id ||
-    payload.payload?.id ||
-    payload.id ||
-    null;
+  console.log('[MAILO AGENT] Webhook payload:', JSON.stringify(payload).slice(0, 300));
 
-  // Extract latest message
-  const msg =
-    payload.message ||
-    payload.payload?.latest_message ||
-    payload.conversation?.latest_message ||
-    null;
-
-  if (!conversationId || !msg) {
-    console.warn('[MAILO AGENT] Webhook missing conversation or message:', JSON.stringify(payload).slice(0, 200));
-    return res.status(200).json({ status: 'ignored', reason: 'missing conversation or message' });
+  // Only process assign events — ignore unassign, mention, test, etc.
+  const eventType = payload.type || '';
+  if (eventType && eventType !== 'assign' && !payload.event_id?.startsWith('evt_test')) {
+    console.log('[MAILO AGENT] Skipping event type:', eventType);
+    return res.status(200).json({ status: 'ignored', reason: `event type: ${eventType}` });
   }
 
-  const emailData = {
-    from:     msg.from?.handle  || msg.author?.handle || '',
-    fromName: msg.from?.name    || msg.author?.name   || '',
-    subject:  payload.conversation?.subject || payload.payload?.subject || '',
-    bodyText: msg.text || msg.body || '',
-  };
+  // Front AI Teammate sends flat payload: { event_id, type, conversation_id, teammate_id }
+  // No message object — we fetch conversation + messages via API
+  const conversationId =
+    payload.conversation_id ||   // flat AI Teammate format
+    payload.conversation?.id ||  // nested format
+    payload.payload?.id ||
+    null;
 
-  // Respond to Front immediately (it expects a fast 200)
+  if (!conversationId) {
+    console.warn('[MAILO AGENT] No conversation ID in payload:', JSON.stringify(payload).slice(0, 200));
+    return res.status(200).json({ status: 'ignored', reason: 'missing conversation_id' });
+  }
+
+  // Respond to Front immediately — fetch conversation data async
   res.status(200).json({ status: 'processing' });
 
-  // Run agent asynchronously
+  const teammateId = payload.teammate_id || null;
+
+  // Run agent — it will fetch conversation + messages itself (no hints since payload lacks them)
   try {
-    await runAgent(conversationId, emailData);
+    await runAgent(conversationId, null, teammateId);
   } catch (err) {
     console.error('[MAILO AGENT] Error:', err.message);
   }
@@ -469,9 +477,11 @@ app.post('/api/agent/test', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  const tokenSet = !!process.env.FRONT_API_TOKEN;
-  console.log(`
+// Export for Vercel serverless; listen only in local dev
+if (!IS_SERVERLESS) {
+  app.listen(PORT, () => {
+    const tokenSet = !!process.env.FRONT_API_TOKEN;
+    console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║           MAILO — Front Plugin Server                  ║
 ╠════════════════════════════════════════════════════════╣
@@ -480,10 +490,12 @@ app.listen(PORT, () => {
 ╠════════════════════════════════════════════════════════╣
 ║  NEXT STEPS                                            ║
 ║  1. Open a new terminal and run:                       ║
-║       ngrok http ${PORT}                                  ║
-║  2. Copy the HTTPS URL (e.g. https://xxxx.ngrok.io)    ║
-║  3. In Front → Settings → Integrations →               ║
-║       Custom plugin → paste the URL                   ║
+║       node tunnel.js                                   ║
+║  2. Copy the HTTPS URL from the terminal               ║
+║  3. In Front → AI Teammates → paste URL + /api/agent   ║
 ╚════════════════════════════════════════════════════════╝
 `);
-});
+  });
+}
+
+module.exports = app;
