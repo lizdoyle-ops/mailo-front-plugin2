@@ -56,8 +56,8 @@ async function classifyAndDraft({ from, fromName, subject, bodyText }) {
     `Email reçu :\nDe : ${fromName || from} <${from}>\nObjet : ${subject}\n\n${bodyText}`;
 
   const msg = await anthropic.messages.create({
-    model:      'claude-sonnet-5',
-    max_tokens: 1500,
+    model:      'claude-haiku-4-5-20251001',
+    max_tokens: 800,
     system:     SYSTEM_PROMPT,
     messages:   [{ role: 'user', content: userMessage }],
   });
@@ -138,8 +138,8 @@ async function getOAuthToken() {
 
 // ── Front REST API helpers ───────────────────────────────────────────────────
 
-async function frontCall(method, path, body) {
-  const token   = await getOAuthToken();
+async function frontCall(method, path, body, useOAuth = false) {
+  const token = useOAuth ? await getOAuthToken() : process.env.FRONT_API_TOKEN;
   const payload = body ? JSON.stringify(body) : null;
 
   return new Promise((resolve, reject) => {
@@ -169,14 +169,27 @@ async function frontCall(method, path, body) {
   });
 }
 
-// Find or create a tag by name; returns tag ID
+// Tag ID cache — avoids listing 8000+ tags on every call
+const _tagCache = {}; // name → id
+
+// Channel ID cache — inbox id → channel id (resolved once, reused forever)
+const _channelCache = {}; // inboxId → channelId
+
 async function resolveTag(tagName) {
-  const list  = await frontCall('GET', '/tags', null);
+  const key = tagName.toLowerCase();
+  if (_tagCache[key]) return _tagCache[key];
+
+  // Search by name instead of listing everything
+  const list  = await frontCall('GET', `/tags?limit=5&q=${encodeURIComponent(tagName)}`, null);
   const tags  = list._results || list.results || [];
-  const found = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase());
-  if (found) return found.id;
+  const found = tags.find(t => t.name.toLowerCase() === key);
+  if (found) {
+    _tagCache[key] = found.id;
+    return found.id;
+  }
 
   const created = await frontCall('POST', '/tags', { name: tagName });
+  _tagCache[key] = created.id;
   return created.id;
 }
 
@@ -186,36 +199,27 @@ async function tagConversation(conversationId, tagName) {
   return tagId;
 }
 
-// Create a reply draft on an existing conversation
+// Resolve channel ID for an inbox — cached after first lookup
+async function resolveChannelId(inboxId) {
+  if (_channelCache[inboxId]) return _channelCache[inboxId];
+  const channels = await frontCall('GET', `/inboxes/${inboxId}/channels`, null);
+  _channelCache[inboxId] = channels._results?.[0]?.id;
+  return _channelCache[inboxId];
+}
+
+// Create a reply draft on a conversation
 async function createReplyDraft(conversationId, replySubject, replyBodyHtml) {
-  // Fetch conversation to get inbox channel and latest message
-  const conv = await frontCall('GET', `/conversations/${conversationId}`, null);
-  const msgs  = await frontCall('GET', `/conversations/${conversationId}/messages`, null);
-  const all   = msgs._results || msgs.results || [];
-  const latest = all[all.length - 1];
+  const inboxes   = await frontCall('GET', `/conversations/${conversationId}/inboxes`, null);
+  const inboxId   = inboxes._results?.[0]?.id;
+  const channelId = await resolveChannelId(inboxId);
 
-  if (!latest) throw new Error('No messages in conversation');
-
-  // Front inbox id doubles as channel id for the draft API
-  const inboxId = conv._links?.related?.inboxes
-    ? (await frontCall('GET', conv._links.related.inboxes, null))
-        ._results?.[0]?.id
-    : (conv.inboxes?.[0]?.id || process.env.FRONT_INBOX_ID);
-
-  if (!inboxId) throw new Error('Cannot resolve inbox/channel for conversation');
-
-  const draft = await frontCall('POST', `/channels/${inboxId}/drafts`, {
-    to:      [latest.from?.handle].filter(Boolean),
-    subject: replySubject,
-    body:    replyBodyHtml,
-    type:    'reply',
-    reply_options: {
-      type:                 'reply',
-      original_message_uid: latest.id,
-    },
+  return frontCall('POST', `/conversations/${conversationId}/drafts`, {
+    channel_id: channelId,
+    body:       replyBodyHtml,
+    subject:    replySubject,
+    type:       'reply',
+    draft_mode: 'shared',
   });
-
-  return draft;
 }
 
 // ── Main agent entry point ───────────────────────────────────────────────────
@@ -224,6 +228,25 @@ async function runAgent(conversationId, emailData) {
   const log = (...a) => console.log('[MAILO AGENT]', ...a);
 
   log(`▶ Processing conversation ${conversationId || '(no id — dry run)'}`);
+
+  // Fetch conversation + messages in parallel when not provided by caller
+  if (!emailData && conversationId) {
+    const [conv, msgs] = await Promise.all([
+      frontCall('GET', `/conversations/${conversationId}`, null),
+      frontCall('GET', `/conversations/${conversationId}/messages`, null),
+    ]);
+    const all    = msgs._results || msgs.results || [];
+    const latest = all.find(m => m.type !== 'system') || all[0];
+    if (!latest) { log('No messages found'); return; }
+
+    emailData = {
+      from:     latest.from?.handle || '',
+      fromName: latest.from?.name   || '',
+      subject:  conv.subject || '',
+      bodyText: latest.text  || latest.body || '',
+    };
+  }
+
   log(`  From: ${emailData.fromName || emailData.from} | Subject: ${emailData.subject}`);
 
   // 1. Classify + draft
@@ -237,16 +260,7 @@ async function runAgent(conversationId, emailData) {
     return { ...result, dryRun: true };
   }
 
-  // 2. Tag conversation
-  let tagId = null;
-  try {
-    tagId = await tagConversation(conversationId, result.tagName);
-    log(`  ✅ Tagged: "${result.tagName}" (${tagId})`);
-  } catch (err) {
-    log(`  ❌ Tagging failed: ${err.message}`);
-  }
-
-  // 3. Create reply draft
+  // 2. Create reply draft
   let draftId = null;
   try {
     const draft = await createReplyDraft(conversationId, result.replySubject, result.replyBodyHtml);
@@ -256,7 +270,7 @@ async function runAgent(conversationId, emailData) {
     log(`  ❌ Draft creation failed: ${err.message}`);
   }
 
-  return { ...result, tagId, draftId };
+  return { ...result, draftId };
 }
 
 module.exports = { runAgent, classifyAndDraft };
