@@ -43,7 +43,7 @@ function getSeedEmails() {
   return [
     {
       from:       'leyton@finalproduction.club',
-      fromName:   'Leyton Bernard',
+      fromName:   'Leyton Barnes',
       subject:    'Panne chaudière collective — Intervention urgente requise',
       body: `<p>Bonjour,</p>
 <p>Je me permets de vous contacter en urgence concernant une panne de la chaudière collective au sein de la résidence <strong>RES LES AMANDIERS</strong>.</p>
@@ -55,7 +55,7 @@ function getSeedEmails() {
   <li>Prévoir une solution de chauffage temporaire si l'intervention dépasse 48h ?</li>
 </ul>
 <p>Dans l'attente de votre retour rapide,</p>
-<p>Cordialement,<br/>Leyton Bernard</p>`,
+<p>Cordialement,<br/>Leyton Barnes</p>`,
       externalId: uniqueRef(),
       threadRef:  uniqueRef(),
     },
@@ -195,7 +195,7 @@ if (ordresDeTravail.length === 0) {
       priorite: 'Urgente',
       property: 'RES LES AMANDIERS',
       contactEmail: 'leyton@finalproduction.club',
-      contactNom: 'Leyton Bernard',
+      contactNom: 'Leyton Barnes',
       assigneA: 'Mme Dupuis',
       createdAt: '2026-01-15T08:30:00.000Z',
       updatedAt: '2026-01-15T08:30:00.000Z',
@@ -389,6 +389,56 @@ app.patch('/api/ordres-de-travail/:id', (req, res) => {
 
   saveOT();
   res.json(ordresDeTravail[idx]);
+});
+
+// ── Import email (Leyton Barnes demo) ───────────────────────────────────────
+
+/**
+ * POST /api/import-email
+ * Injects a Leyton Barnes inbound email into Front (inbox inb_ntfs8).
+ * Body: { type: 'first' | 'followup', threadRef?: number }
+ */
+app.post('/api/import-email', async (req, res) => {
+  const token = process.env.FRONT_API_TOKEN;
+  if (!token) {
+    return res.status(500).json({ error: 'FRONT_API_TOKEN not set.' });
+  }
+
+  const { type, threadRef } = req.body;
+  const inboxId = 'inb_ntfs8';
+  const currentTimestamp = Math.floor(Date.now() / 1000);
+  const randomPart = Math.floor(Math.random() * 1000);
+  const externalId = randomPart + currentTimestamp;
+  const resolvedThreadRef = type === 'first' ? String(externalId) : String(threadRef ?? externalId);
+
+  const subject =
+    type === 'first'
+      ? 'Quote request - property management for a 3-unit building'
+      : 'Re: Quote request - property management for a 3-unit building';
+
+  const body =
+    type === 'first'
+      ? `<p>Hi,</p><p>I own a residence in Paris and I'm currently self-managing. I'd like a quote for full property management services. Could someone send me pricing and next steps?</p><p>Leyton Barnes<br>06 XX XX XX XX</p>`
+      : `<p>Hi,</p><p>Following up on my earlier request — happy to share more details about the property.</p><p>It's a Haussmannian building in the 8th arrondissement of Paris, comprising three apartments across multiple floors. All three units are currently self-managed but I'm looking to hand over full property management — rent collection, tenant relations, and maintenance coordination.</p><p>Please let me know if you need anything else to prepare a quote.</p><p>Best,<br>Leyton Barnes<br>06 XX XX XX XX</p>`;
+
+  const msg = {
+    from:       'leyton@finalproduction.club',
+    fromName:   'Leyton Barnes',
+    subject,
+    body,
+    externalId: String(externalId),
+    threadRef:  resolvedThreadRef,
+  };
+
+  const to = 'contact-emeria@testforfront.com';
+
+  try {
+    await importMessage(token, inboxId, to, msg);
+    res.json({ ok: true, threadRef: resolvedThreadRef, externalId });
+  } catch (err) {
+    console.error('[MAILO import-email]', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── BYOA Agent endpoints ─────────────────────────────────────────────────────

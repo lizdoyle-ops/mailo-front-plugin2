@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MAILO — Assistant IA Foncia</title>
+  <title>MAILO — AI Assistant Foncia</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -639,6 +639,51 @@
       0%, 80%, 100% { transform: translateY(0); }
       40% { transform: translateY(-4px); }
     }
+
+    /* ── Import email action bar ── */
+    .import-bar {
+      flex-shrink: 0;
+      padding: 8px 10px 10px;
+      border-top: 1px solid var(--grey-200);
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .import-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .import-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 7px 8px;
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 11px; font-weight: 600;
+      cursor: pointer;
+      transition: opacity .12s, background .12s;
+    }
+    .import-btn:disabled { opacity: .5; pointer-events: none; }
+    .import-btn.primary {
+      background: var(--teal);
+      border: 1px solid var(--teal);
+      color: #fff;
+    }
+    .import-btn.primary:hover { opacity: .88; }
+    .import-btn.secondary {
+      background: #fff;
+      border: 1px solid var(--grey-300);
+      color: var(--grey-700);
+    }
+    .import-btn.secondary:hover { background: var(--grey-50); border-color: var(--teal); color: var(--teal); }
+    .import-status {
+      font-size: 10px; text-align: center;
+      color: var(--grey-500); line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -647,7 +692,7 @@
 <div class="loading-screen" id="loading">
   <div class="loading-logo">M</div>
   <div class="spinner"></div>
-  <div class="loading-text">Chargement du contexte…</div>
+  <div class="loading-text">Loading context…</div>
 </div>
 
 <!-- Main app (hidden until context loads) -->
@@ -658,19 +703,11 @@
     <div class="header-logo">M</div>
     <div class="header-text">
       <div class="header-title">MAILO</div>
-      <div class="header-sub">Assistant IA — Foncia Service Client</div>
+      <div class="header-sub">AI Assistant — Foncia Customer Service</div>
     </div>
     <div class="header-status">
-      <!-- Seed / test-email button -->
-      <button class="seed-btn" id="seed-btn" title="Envoyer 3 emails de test dans la boîte">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-          stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="4" width="20" height="16" rx="2"/>
-          <polyline points="2,4 12,13 22,4"/>
-        </svg>
-      </button>
       <div class="status-dot"></div>
-      <span class="status-label">En ligne</span>
+      <span class="status-label">Online</span>
     </div>
   </header>
 
@@ -679,8 +716,8 @@
     <div class="contact-top">
       <div class="avatar" id="contact-avatar">DP</div>
       <div class="contact-info">
-        <div class="contact-name" id="contact-name">Damien Pozzi</div>
-        <div class="contact-role" id="contact-role">Collaborateur interne · Test-Sirius-Reemia</div>
+        <div class="contact-name" id="contact-name">Leyton Barnes</div>
+        <div class="contact-role" id="contact-role">Client · Final Production Club</div>
       </div>
       <div class="millenium-badge" id="millenium-badge">⊙ Millénium</div>
     </div>
@@ -690,30 +727,30 @@
 
   <!-- Tab bar -->
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="contexte">Contexte</button>
-    <button class="tab-btn" data-tab="ai">Assistant IA</button>
+    <button class="tab-btn active" data-tab="contexte">Context</button>
+    <button class="tab-btn" data-tab="ai">AI Assistant</button>
     <button class="tab-btn" data-tab="actions">Actions</button>
   </nav>
 
   <!-- ── Tab 1: Contexte ── -->
   <div class="tab-panel active" id="panel-contexte">
 
-    <div class="section-header">Email en cours</div>
+    <div class="section-header">Current email</div>
     <div class="email-card">
-      <div class="email-subject" id="email-subject">Demande d'informations sur l'assurance</div>
-      <div class="email-meta" id="email-meta">19/12/2025 · Damien Pozzi</div>
+      <div class="email-subject" id="email-subject">Insurance information request</div>
+      <div class="email-meta" id="email-meta">19/12/2025 · Leyton Barnes</div>
       <div class="email-preview" id="email-preview">
-        Demande de copie du contrat MRCI multirisque immeuble en cours.
+        Request for a copy of the current MRCI multi-risk building insurance contract.
       </div>
     </div>
 
-    <div class="section-header">Alertes dossier</div>
+    <div class="section-header">Case alerts</div>
     <div class="alert-list" id="alert-list"></div>
 
-    <div class="section-header">Données Millénium — Biens gérés</div>
+    <div class="section-header">Millénium Data — Managed properties</div>
     <div id="properties-list"></div>
 
-    <div class="section-header">Données Millénium — Enregistrements liés</div>
+    <div class="section-header">Millénium Data — Linked records</div>
     <div id="related-lists"></div>
 
   </div>
@@ -724,16 +761,16 @@
     <div class="chat-messages" id="chat-messages"></div>
 
     <div class="quick-actions">
-      <button class="quick-btn" data-action="synthese">Synthèse historique</button>
-      <button class="quick-btn primary" data-action="rediger">Rédiger réponse</button>
-      <button class="quick-btn" data-action="import">Import Millénium</button>
-      <button class="quick-btn" data-action="appels">Appels de fonds</button>
+      <button class="quick-btn" data-action="synthese">Historical summary</button>
+      <button class="quick-btn primary" data-action="rediger">Draft reply</button>
+      <button class="quick-btn" data-action="import">Millénium import</button>
+      <button class="quick-btn" data-action="appels">Fund calls</button>
     </div>
 
     <div class="chat-input-row">
       <input class="chat-input" id="chat-input"
-        type="text" placeholder="Question sur ce dossier…" />
-      <button class="send-btn" id="send-btn" aria-label="Envoyer">
+        type="text" placeholder="Question about this case…" />
+      <button class="send-btn" id="send-btn" aria-label="Send">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -746,8 +783,31 @@
 
   <!-- ── Tab 3: Actions ── -->
   <div class="tab-panel" id="panel-actions">
-    <div class="section-header" style="padding-top:12px;">Actions disponibles</div>
+    <div class="section-header" style="padding-top:12px;">Available actions</div>
     <div class="actions-grid" id="actions-grid"></div>
+  </div>
+
+  <!-- ── Import email bar (always visible) ── -->
+  <div class="import-bar">
+    <div class="import-grid">
+      <button class="import-btn primary" id="import-first-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <polyline points="2,4 12,13 22,4"/>
+        </svg>
+        Send first email
+      </button>
+      <button class="import-btn secondary" id="import-followup-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <polyline points="2,4 12,13 22,4"/>
+        </svg>
+        Send follow-up
+      </button>
+    </div>
+    <div class="import-status" id="import-status" style="display:none;"></div>
   </div>
 
 </div>
@@ -758,11 +818,11 @@
 <!-- Compose modal (standalone dev mode) -->
 <div class="compose-overlay" id="compose-overlay">
   <div class="compose-modal">
-    <h3>✏️ Brouillon de réponse</h3>
+    <h3>✏️ Reply draft</h3>
     <textarea class="compose-body" id="compose-body" rows="6"></textarea>
     <div class="compose-actions">
-      <button class="compose-close" id="compose-close">Fermer</button>
-      <button class="compose-send" id="compose-copy">Copier</button>
+      <button class="compose-close" id="compose-close">Close</button>
+      <button class="compose-send" id="compose-copy">Copy</button>
     </div>
   </div>
 </div>
@@ -771,7 +831,7 @@
 // ── Utilities ──────────────────────────────────────────────────────────────
 
 function now() {
-  return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
 function initials(name) {
@@ -790,7 +850,7 @@ function showToast(msg, duration = 2200) {
 
 function generateReplyEmail() {
   const rc   = chatCtx.replyContent;
-  const name = chatCtx.contactName || 'Madame, Monsieur';
+  const name = chatCtx.contactName || 'Sir/Madam';
 
   let bodyContent;
   if (rc) {
@@ -803,12 +863,12 @@ function generateReplyEmail() {
       <p style="margin:0 0 16px;">${rc.closing}</p>`;
   } else {
     bodyContent = `
-      <p style="margin:0 0 16px;">Suite à votre demande concernant <em>${chatCtx.subject || 'votre dossier'}</em>, nous revenons vers vous avec les éléments suivants.</p>
-      <p style="margin:0 0 16px;">[Insérer votre réponse ici]</p>`;
+      <p style="margin:0 0 16px;">Further to your request regarding <em>${chatCtx.subject || 'your case'}</em>, please find our response below.</p>
+      <p style="margin:0 0 16px;">[Insert your reply here]</p>`;
   }
 
   return `<!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8"></head>
+<html lang="en"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;">
 <tr><td align="center">
@@ -817,7 +877,7 @@ function generateReplyEmail() {
   <!-- Header -->
   <tr><td style="background:#1a3a3a;padding:24px 32px;">
     <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:3px;">EMERIA</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:3px;">Foncia · Service Client</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:3px;">Foncia · Customer Service</div>
   </td></tr>
 
   <!-- Accent bar -->
@@ -825,12 +885,12 @@ function generateReplyEmail() {
 
   <!-- Body -->
   <tr><td style="padding:32px;color:#374151;font-size:14px;line-height:1.6;">
-    <p style="margin:0 0 20px;font-size:15px;">Bonjour <strong>${name}</strong>,</p>
+    <p style="margin:0 0 20px;font-size:15px;">Dear <strong>${name}</strong>,</p>
     ${bodyContent}
     <div style="border-top:1px solid #e5e7eb;margin:24px 0;"></div>
     <p style="margin:0;font-size:13px;color:#374151;">
-      Cordialement,<br>
-      <strong style="color:#1a3a3a;">L'équipe Emeria — Foncia Service Client</strong><br>
+      Kind regards,<br>
+      <strong style="color:#1a3a3a;">The Emeria — Foncia Customer Service Team</strong><br>
       <span style="color:#9ca3af;font-size:12px;">✉ emeria-care@foncia.fr &nbsp;|&nbsp; 📞 01 XX XX XX XX</span>
     </p>
   </td></tr>
@@ -838,7 +898,7 @@ function generateReplyEmail() {
   <!-- Footer -->
   <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:14px 32px;text-align:center;">
     <p style="margin:0;font-size:11px;color:#9ca3af;">
-      © 2025 Emeria · Foncia Group — Ce message et ses pièces jointes sont confidentiels.
+      © 2025 Emeria · Foncia Group — This message and its attachments are confidential.
     </p>
   </td></tr>
 
@@ -858,7 +918,7 @@ window.addEventListener('mailo:compose', (e) => {
 });
 
 window.addEventListener('mailo:compose:success', () => {
-  showToast('✅ Brouillon de réponse créé dans Front', 2800);
+  showToast('✅ Reply draft created in Front', 2800);
 });
 
 document.getElementById('compose-close').addEventListener('click', () => {
@@ -868,7 +928,7 @@ document.getElementById('compose-close').addEventListener('click', () => {
 document.getElementById('compose-copy').addEventListener('click', () => {
   const body = document.getElementById('compose-body');
   navigator.clipboard.writeText(body.value).catch(() => {});
-  showToast('Brouillon copié dans le presse-papiers');
+  showToast('Draft copied to clipboard');
   document.getElementById('compose-overlay').classList.remove('open');
 });
 
@@ -941,24 +1001,24 @@ function showTyping() {
 // Simulated AI responses
 const aiResponses = {
   synthese:
-    "Voici une synthèse des échanges avec {name} :\n\n" +
-    "• 3 demandes concernant la copropriété SDC BLO VOLTAIRE\n" +
-    "• Dernière interaction : demande de contrat d'assurance MRCI\n" +
-    "• Appel de fonds Q4 en attente de traitement\n" +
-    "• Aucun litige en cours",
+    "Here is a summary of exchanges with {name}:\n\n" +
+    "• 3 requests regarding co-ownership SDC BLO VOLTAIRE\n" +
+    "• Latest interaction: MRCI insurance contract request\n" +
+    "• Q4 fund call pending processing\n" +
+    "• No ongoing disputes",
   rediger:
-    "Je prépare un brouillon de réponse pour {name}…\nVeuillez patienter.",
+    "Preparing a reply draft for {name}… Please wait.",
   import:
-    "Import Millénium en cours pour le dossier SDC BLO VOLTAIRE…\n\nDonnées rafraîchies ✓\n• 34 lots confirmés\n• Gestionnaire : M. Arnaud\n• Appel fonds Q4 : 12 450 €",
+    "Millénium import in progress for case SDC BLO VOLTAIRE…\n\nData refreshed ✓\n• 34 units confirmed\n• Manager: Mr Arnaud\n• Q4 fund call: €12,450",
   appels:
-    "Appels de fonds — SDC BLO VOLTAIRE :\n\n" +
-    "• Q3 2025 : 11 800 € — Réglé ✓\n" +
-    "• Q4 2025 : 12 450 € — En attente ⚠️\n\n" +
-    "Souhaitez-vous envoyer un rappel au copropriétaire ?",
+    "Fund calls — SDC BLO VOLTAIRE:\n\n" +
+    "• Q3 2025: €11,800 — Settled ✓\n" +
+    "• Q4 2025: €12,450 — Pending ⚠️\n\n" +
+    "Would you like to send a reminder to the co-owner?",
   default:
-    "Compris. Je recherche des informations sur ce dossier…\n\n" +
-    "Pour toute demande concernant {name} / SDC BLO VOLTAIRE, je suis disponible. " +
-    "Précisez votre demande pour que je vous aide au mieux.",
+    "Understood. Searching for information on this case…\n\n" +
+    "For any request regarding {name} / SDC BLO VOLTAIRE, I am available. " +
+    "Please specify your request so I can assist you.",
 };
 
 function sendChatMessage(text) {
@@ -970,16 +1030,16 @@ function sendChatMessage(text) {
   setTimeout(() => {
     const lower = text.toLowerCase();
     let resp;
-    if (/synth|historique|résumé/i.test(lower))       resp = aiResponses.synthese;
-    else if (/rédig|brouillon|réponse/i.test(lower))  resp = aiResponses.rediger;
-    else if (/import|millénium|milleni/i.test(lower)) resp = aiResponses.import;
-    else if (/appel|fond|fonds/i.test(lower))         resp = aiResponses.appels;
-    else                                               resp = aiResponses.default;
+    if (/synth|histor|summary/i.test(lower))              resp = aiResponses.synthese;
+    else if (/draft|reply|rédig|brouillon/i.test(lower))  resp = aiResponses.rediger;
+    else if (/import|millénium|milleni/i.test(lower))     resp = aiResponses.import;
+    else if (/fund|call|appel|fond/i.test(lower))         resp = aiResponses.appels;
+    else                                                    resp = aiResponses.default;
 
     resp = resp.replace('{name}', chatCtx.contactName || 'le contact');
     addMessage(resp, 'ai');
 
-    if (/rédig|brouillon|réponse/i.test(lower)) {
+    if (/draft|reply|rédig|brouillon/i.test(lower)) {
       setTimeout(() => {
         window.frontCompose && window.frontCompose.reply(generateReplyEmail());
       }, 600);
@@ -998,10 +1058,10 @@ document.querySelectorAll('.quick-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const action = btn.dataset.action;
     const labels = {
-      synthese: 'Synthèse historique',
-      rediger:  'Rédiger réponse',
-      import:   'Import Millénium',
-      appels:   'Appels de fonds',
+      synthese: 'Historical summary',
+      rediger:  'Draft reply',
+      import:   'Millénium import',
+      appels:   'Fund calls',
     };
     sendChatMessage(labels[action] || action);
 
@@ -1017,26 +1077,26 @@ function generateRecordEmail(sectionLabel, item) {
   const property = chatCtx.property    || '';
 
   const ICONS = {
-    'Factures':          '💶',
-    'Ordres de travail': '🔧',
-    'Devis':             '📋',
-    'Cas de support':    '🎫',
-    'Contrats':          '📄',
+    'Invoices':       '💶',
+    'Work orders':    '🔧',
+    'Quotes':         '📋',
+    'Support cases':  '🎫',
+    'Contracts':      '📄',
   };
   const icon = ICONS[sectionLabel] || '📎';
 
   // Status colour mapping (inline for email clients)
   function statusStyle(s) {
     const v = (s || '').toLowerCase();
-    if (v.includes('pay') || v.includes('actif'))  return 'background:#ccfbf1;color:#0f766e;';
-    if (v.includes('ouvert'))                       return 'background:#dbeafe;color:#1d4ed8;';
-    if (v.includes('cours'))                        return 'background:#fef9c3;color:#854d0e;';
-    if (v.includes('attente'))                      return 'background:#ffedd5;color:#c2410c;';
+    if (v.includes('pay') || v.includes('paid') || v.includes('actif') || v.includes('active') || v.includes('repaired')) return 'background:#ccfbf1;color:#0f766e;';
+    if (v.includes('ouvert') || v.includes('open'))                                                                         return 'background:#dbeafe;color:#1d4ed8;';
+    if (v.includes('cours') || v.includes('progress'))                                                                      return 'background:#fef9c3;color:#854d0e;';
+    if (v.includes('attente') || v.includes('pending') || v.includes('proposed'))                                           return 'background:#ffedd5;color:#c2410c;';
     return 'background:#f3f4f6;color:#374151;';
   }
 
   return `<!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8"></head>
+<html lang="en"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;">
 <tr><td align="center">
@@ -1045,14 +1105,14 @@ function generateRecordEmail(sectionLabel, item) {
   <!-- Header -->
   <tr><td style="background:#1a3a3a;padding:24px 32px;">
     <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:3px;">EMERIA</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:3px;">Foncia · Service Client</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:3px;">Foncia · Customer Service</div>
   </td></tr>
   <tr><td style="background:#0d9488;height:3px;"></td></tr>
 
   <!-- Body -->
   <tr><td style="padding:32px;color:#374151;font-size:14px;line-height:1.6;">
-    <p style="margin:0 0 20px;font-size:15px;">Bonjour <strong>${contact}</strong>,</p>
-    <p style="margin:0 0 20px;">Veuillez trouver ci-dessous le récapitulatif du document suivant concernant le bien <strong>${property}</strong> :</p>
+    <p style="margin:0 0 20px;font-size:15px;">Dear <strong>${contact}</strong>,</p>
+    <p style="margin:0 0 20px;">Please find below a summary of the following document regarding the property <strong>${property}</strong>:</p>
 
     <!-- Record card -->
     <table width="100%" cellpadding="0" cellspacing="0"
@@ -1079,11 +1139,11 @@ function generateRecordEmail(sectionLabel, item) {
       </td></tr>
     </table>
 
-    <p style="margin:0 0 16px;">Pour toute question relative à ce document, n'hésitez pas à contacter votre gestionnaire ou à répondre à cet email.</p>
+    <p style="margin:0 0 16px;">For any questions regarding this document, please contact your property manager or reply to this email.</p>
     <div style="border-top:1px solid #e5e7eb;margin:24px 0;"></div>
     <p style="margin:0;font-size:13px;color:#374151;">
-      Cordialement,<br>
-      <strong style="color:#1a3a3a;">L'équipe Emeria — Foncia Service Client</strong><br>
+      Kind regards,<br>
+      <strong style="color:#1a3a3a;">The Emeria — Foncia Customer Service Team</strong><br>
       <span style="color:#9ca3af;font-size:12px;">✉ emeria-care@foncia.fr &nbsp;|&nbsp; 📞 01 XX XX XX XX</span>
     </p>
   </td></tr>
@@ -1091,7 +1151,7 @@ function generateRecordEmail(sectionLabel, item) {
   <!-- Footer -->
   <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:14px 32px;text-align:center;">
     <p style="margin:0;font-size:11px;color:#9ca3af;">
-      © 2025 Emeria · Foncia Group — Ce message est confidentiel.
+      © 2025 Emeria · Foncia Group — This message is confidential.
     </p>
   </td></tr>
 
@@ -1104,20 +1164,20 @@ function generateRecordEmail(sectionLabel, item) {
 // ── Related records accordion ─────────────────────────────────────────────
 
 const RELATED_SECTIONS = [
-  { key: 'factures',      icon: '💶', label: 'Factures' },
-  { key: 'ordresTravail', icon: '🔧', label: 'Ordres de travail' },
-  { key: 'devis',         icon: '📋', label: 'Devis' },
-  { key: 'casDeSoutien',  icon: '🎫', label: 'Cas de support' },
-  { key: 'contrats',      icon: '📄', label: 'Contrats' },
+  { key: 'factures',      icon: '💶', label: 'Invoices' },
+  { key: 'ordresTravail', icon: '🔧', label: 'Work orders' },
+  { key: 'devis',         icon: '📋', label: 'Quotes' },
+  { key: 'casDeSoutien',  icon: '🎫', label: 'Support cases' },
+  { key: 'contrats',      icon: '📄', label: 'Contracts' },
 ];
 
 function recordStatusClass(status) {
   const s = (status || '').toLowerCase();
-  if (s.includes('pay'))      return 'rs-payee';
-  if (s.includes('actif') || s.includes('active')) return 'rs-actif';
-  if (s.includes('ouvert') || s.includes('open'))  return 'rs-ouvert';
-  if (s.includes('cours'))    return 'rs-cours';
-  if (s.includes('attente'))  return 'rs-attente';
+  if (s.includes('pay') || s.includes('paid') || s.includes('repaired')) return 'rs-payee';
+  if (s.includes('actif') || s.includes('active'))                        return 'rs-actif';
+  if (s.includes('ouvert') || s.includes('open'))                         return 'rs-ouvert';
+  if (s.includes('cours') || s.includes('progress'))                      return 'rs-cours';
+  if (s.includes('attente') || s.includes('pending'))                     return 'rs-attente';
   return 'rs-propose';
 }
 
@@ -1150,7 +1210,7 @@ function buildRelatedLists(records) {
     body.className = 'related-row-body';
 
     if (items.length === 0) {
-      body.innerHTML = `<div class="related-empty">Aucun enregistrement</div>`;
+      body.innerHTML = `<div class="related-empty">No records</div>`;
     } else {
       items.forEach(item => {
         const rec = document.createElement('div');
@@ -1159,7 +1219,7 @@ function buildRelatedLists(records) {
         // Send button
         const sendBtn = document.createElement('button');
         sendBtn.className = 'record-send-btn';
-        sendBtn.title = `Envoyer un récapitulatif de ce ${label.toLowerCase()}`;
+        sendBtn.title = `Send a summary of this ${label.toLowerCase()}`;
         sendBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"
           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -1170,7 +1230,7 @@ function buildRelatedLists(records) {
           e.stopPropagation();
           const html = generateRecordEmail(label, item);
           window.frontCompose && window.frontCompose.reply(html);
-          showToast(`📤 Récapitulatif ${label.toLowerCase()} en cours…`, 2000);
+          showToast(`📤 Sending ${label.toLowerCase()} summary…`, 2000);
         });
 
         rec.innerHTML = `
@@ -1198,12 +1258,12 @@ function buildRelatedLists(records) {
 // ── Action cards data ──────────────────────────────────────────────────────
 
 const ACTIONS = [
-  { id: 'synthese',  icon: '📋', title: 'Synthèse historique', sub: 'Résumé IA de tous les échanges' },
-  { id: 'os',        icon: '🔧', title: 'Créer un OS',         sub: "Ordre de service depuis cet email" },
-  { id: 'pdf',       icon: '📄', title: 'Préparer PDF joint',  sub: 'Document à joindre en réponse' },
-  { id: 'import',    icon: '⬇️', title: 'Import Millénium',    sub: 'Rafraîchir les données dossier' },
-  { id: 'rediger',   icon: '✏️', title: 'Rédiger réponse',     sub: 'Brouillon IA pré-rempli' },
-  { id: 'ticket',    icon: '🎫', title: 'Créer ticket',        sub: "Ouvrir un ticket depuis l'email" },
+  { id: 'synthese', icon: '📋', title: 'Historical summary', sub: 'AI summary of all exchanges' },
+  { id: 'os',       icon: '🔧', title: 'Create work order',  sub: 'Service order from this email' },
+  { id: 'pdf',      icon: '📄', title: 'Prepare attachment', sub: 'Document to attach in reply' },
+  { id: 'import',   icon: '⬇️', title: 'Millénium import',   sub: 'Refresh case data' },
+  { id: 'rediger',  icon: '✏️', title: 'Draft reply',        sub: 'AI pre-filled draft' },
+  { id: 'ticket',   icon: '🎫', title: 'Create ticket',      sub: 'Open a ticket from the email' },
 ];
 
 function buildActions() {
@@ -1218,7 +1278,7 @@ function buildActions() {
       <div class="action-sub">${a.sub}</div>
     `;
     card.addEventListener('click', () => {
-      showToast('⏳ Traitement en cours…');
+      showToast('⏳ Processing…');
       console.log('[MAILO] Action:', a.id);
 
       if (a.id === 'rediger') {
@@ -1240,59 +1300,83 @@ function buildActions() {
 
 // ── Seed inbox ─────────────────────────────────────────────────────────────
 
-async function seedInbox() {
-  const btn = document.getElementById('seed-btn');
-  btn.classList.add('loading');
-  showToast('📨 Envoi de 3 emails de test…', 3500);
+// ── Import email buttons ──────────────────────────────────────────────────────
+
+let importThreadRef = null;
+
+async function sendFirstEmail() {
+  const btn = document.getElementById('import-first-btn');
+  const statusEl = document.getElementById('import-status');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  statusEl.style.display = 'none';
 
   try {
-    const resp = await fetch('/api/seed', {
+    const resp = await fetch('/api/import-email', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ inboxId: window.frontInboxId || null }),
+      body:    JSON.stringify({ type: 'first' }),
     });
-
     const data = await resp.json();
-
-    if (!resp.ok) {
-      showToast('❌ ' + (data.error || 'Erreur API Front'), 4000);
-      console.error('[MAILO seed]', data);
-      return;
-    }
-
-    const ok   = data.results.filter(r => r.success).length;
-    const fail = data.results.filter(r => !r.success).length;
-
-    if (fail > 0) {
-      showToast(`⚠️ ${ok}/3 emails envoyés (${fail} erreur${fail > 1 ? 's' : ''})`, 4000);
-      data.results.filter(r => !r.success).forEach(r =>
-        console.error('[MAILO seed]', r.from, '→', r.error));
-    } else {
-      showToast('✅ 3 emails envoyés dans la boîte !', 2800);
-    }
+    if (!resp.ok || !data.ok) throw new Error(data.error || 'Unknown error');
+    importThreadRef = data.threadRef;
+    statusEl.textContent = '✓ First email sent to Front inbox.';
+    statusEl.style.display = 'block';
+    showToast('✅ First email sent!', 2500);
   } catch (err) {
-    showToast('❌ Erreur réseau : ' + err.message, 4000);
-    console.error('[MAILO seed]', err);
+    statusEl.textContent = '❌ ' + err.message;
+    statusEl.style.display = 'block';
+    console.error('[MAILO import]', err);
   } finally {
-    btn.classList.remove('loading');
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg> Send first email`;
   }
 }
 
-document.getElementById('seed-btn').addEventListener('click', seedInbox);
+async function sendFollowupEmail() {
+  const btn = document.getElementById('import-followup-btn');
+  const statusEl = document.getElementById('import-status');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  statusEl.style.display = 'none';
+
+  try {
+    const resp = await fetch('/api/import-email', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ type: 'followup', threadRef: importThreadRef }),
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) throw new Error(data.error || 'Unknown error');
+    statusEl.textContent = '✓ Follow-up sent to the same thread.';
+    statusEl.style.display = 'block';
+    showToast('✅ Follow-up email sent!', 2500);
+  } catch (err) {
+    statusEl.textContent = '❌ ' + err.message;
+    statusEl.style.display = 'block';
+    console.error('[MAILO import]', err);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg> Send follow-up`;
+  }
+}
+
+document.getElementById('import-first-btn').addEventListener('click', () => sendFirstEmail());
+document.getElementById('import-followup-btn').addEventListener('click', () => sendFollowupEmail());
 
 // ── Tag color helper ───────────────────────────────────────────────────────
 
 const TAG_MAP = {
-  'Copropriété':          'tag-blue',
-  'Gestion locative':     'tag-orange',
-  'Fournisseur actif':    'tag-salmon',
-  'Syndic':               'tag-blue',
-  'Appel fonds en attente': 'tag-orange',
-  'Locataire actif':      'tag-green',
-  'Maintenance urgente':  'tag-red',
-  'Question financière':  'tag-orange',
-  'Administratif':        'tag-grey',
-  'Admin en cours':       'tag-grey',
+  'Co-ownership':        'tag-blue',
+  'Rental management':   'tag-orange',
+  'Active supplier':     'tag-salmon',
+  'Co-ownership mgmt':   'tag-blue',
+  'Fund call pending':   'tag-orange',
+  'Active tenant':       'tag-green',
+  'Urgent maintenance':  'tag-red',
+  'Financial query':     'tag-orange',
+  'Administrative':      'tag-grey',
+  'Admin in progress':   'tag-grey',
 };
 
 function tagClass(label, color) {
@@ -1383,9 +1467,9 @@ window.renderPlugin = function(ctx) {
   const chatContainer = document.getElementById('chat-messages');
   chatContainer.innerHTML = '';
   const aiIntro = ctx.aiMessage ||
-    `Bonjour ! J'ai analysé l'email de ${ctx.contact.name} et son dossier Millénium.\n\n` +
-    `Demande : "${ctx.conversation.subject}".\n\n` +
-    `Comment souhaitez-vous répondre ?`;
+    `Hello! I've analysed ${ctx.contact.name}'s email and their Millénium file.\n\n` +
+    `Request: "${ctx.conversation.subject}".\n\n` +
+    `How would you like to respond?`;
   addMessage(aiIntro, 'ai');
 };
 </script>

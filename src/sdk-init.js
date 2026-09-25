@@ -5,64 +5,64 @@ import Front from '@frontapp/plugin-sdk';
 const MOCK_BY_EMAIL = {
   'leyton@finalproduction.club': {
     contact: {
-      name:            'Leyton Bernard',
+      name:            'Leyton Barnes',
       role:            'Client · Final Production Club',
-      tags:            ['Copropriété', 'Maintenance urgente'],
+      tags:            ['Co-ownership', 'Urgent maintenance'],
       property:        'RES LES AMANDIERS',
       milleniumLinked: true,
     },
     conversation: {
-      subject: 'Panne chaudière collective — Intervention urgente requise',
-      date:    new Date().toLocaleDateString('fr-FR'),
-      preview: 'La chaudière collective est tombée en panne hier soir. Plusieurs locataires se retrouvent sans chauffage ni eau chaude.',
+      subject: 'Collective boiler breakdown — Urgent intervention required',
+      date:    new Date().toLocaleDateString('en-GB'),
+      preview: 'The collective boiler broke down last night. Several tenants are without heating or hot water.',
     },
     alerts: [
-      { level: 'red',    text: 'Panne chaudière — intervention urgente requise' },
-      { level: 'orange', text: 'Plusieurs locataires impactés (chauffage / eau chaude)' },
-      { level: 'yellow', text: 'Prestataire de maintenance notifié — réponse en attente' },
+      { level: 'red',    text: 'Boiler failure — urgent intervention required' },
+      { level: 'orange', text: 'Multiple tenants affected (heating / hot water)' },
+      { level: 'yellow', text: 'Maintenance contractor notified — awaiting response' },
     ],
     properties: [
       {
         name:   'RES LES AMANDIERS',
-        type:   'Copropriété',
-        detail: '18 lots · Gestionnaire : Mme Dupuis',
+        type:   'Co-ownership',
+        detail: '18 units · Manager: Ms Dupuis',
         tags: [
-          { label: 'Syndic',             color: 'blue' },
-          { label: 'Maintenance urgente', color: 'red'  },
+          { label: 'Co-ownership',       color: 'blue' },
+          { label: 'Urgent maintenance', color: 'red'  },
         ],
       },
     ],
     aiMessage:
-      "J'ai analysé l'email de Leyton Bernard concernant la **panne de chaudière collective** (RES LES AMANDIERS).\n\n" +
-      "⚠️ Situation urgente : plusieurs locataires sont sans chauffage ni eau chaude depuis hier soir.\n\n" +
-      "Je recommande d'accuser réception immédiatement, de confirmer l'ouverture d'un ordre de service et d'indiquer le délai d'intervention.\n\n" +
-      "Voulez-vous que je génère le brouillon de réponse ?",
+      "I've analysed Leyton Barnes's email regarding the **collective boiler failure** (RES LES AMANDIERS).\n\n" +
+      "⚠️ Urgent situation: several tenants have been without heating or hot water since last night.\n\n" +
+      "I recommend acknowledging receipt immediately, confirming a work order has been opened, and indicating the expected response time.\n\n" +
+      "Would you like me to generate the reply draft?",
     replyContent: {
-      intro:  "Nous avons bien reçu votre signalement concernant la panne de la chaudière collective au sein de la résidence <strong>RES LES AMANDIERS</strong> et comprenons l'urgence de la situation.",
+      intro:  "We have received your report regarding the collective boiler failure at <strong>RES LES AMANDIERS</strong> and understand the urgency of the situation.",
       points: [
-        "Un ordre de service a été immédiatement ouvert auprès de notre prestataire de maintenance agréé",
-        "Une intervention technique est planifiée dans les <strong>24 heures</strong>",
-        "Votre gestionnaire Mme Dupuis assure le suivi de votre dossier",
-        "Un numéro de suivi vous sera communiqué dès confirmation de l'intervention",
+        "A work order has been immediately raised with our approved maintenance contractor",
+        "A technical intervention is scheduled within <strong>24 hours</strong>",
+        "Your property manager Ms Dupuis is overseeing your case",
+        "A tracking reference will be provided once the intervention is confirmed",
       ],
-      closing: "Nous vous tiendrons informé de l'avancement par retour d'email. Nous nous excusons pour la gêne occasionnée.",
+      closing: "We will keep you informed of progress by email. We apologise for the inconvenience.",
     },
     relatedRecords: {
       factures:      [
-        { label: 'Charges Q3 2025 — RES LES AMANDIERS', status: 'Payée', date: '01/10/2025' },
-        { label: 'Intervention urgence chaudière', status: 'En attente', date: '15/01/2026' },
+        { label: 'Q3 2025 service charges — RES LES AMANDIERS', status: 'Paid',    date: '01/10/2025' },
+        { label: 'Emergency boiler call-out',                   status: 'Pending',  date: '15/01/2026' },
       ],
       ordresTravail: [
-        { label: 'Panne chaudière collective — Bât. A', status: 'En cours', date: '15/01/2026' },
+        { label: 'WO-1289 — Water leak · 24 Rue de la Paix, Apt 5B', status: 'Repaired', date: '07/09/2026' },
       ],
       devis:         [
-        { label: 'Remplacement chaudière Frisquet — #2026-089', status: 'Proposé', date: '16/01/2026' },
+        { label: 'Boiler replacement Frisquet — #2026-089', status: 'Proposed', date: '16/01/2026' },
       ],
       casDeSoutien:  [
-        { label: 'Ticket #4521 — Panne chaudière collective', status: 'Ouvert', date: '15/01/2026' },
+        { label: 'Ticket #4521 — Collective boiler failure', status: 'Open', date: '15/01/2026' },
       ],
       contrats:      [
-        { label: 'Contrat syndic 2025 — RES LES AMANDIERS', status: 'Actif', date: '01/01/2025' },
+        { label: 'Co-ownership contract 2025 — RES LES AMANDIERS', status: 'Active', date: '01/01/2025' },
       ],
     },
   },
@@ -70,58 +70,58 @@ const MOCK_BY_EMAIL = {
   'sarah@zestymedia.club': {
     contact: {
       name:            'Sarah Vidal',
-      role:            'Cliente · Zesty Media',
-      tags:            ['Gestion locative', 'Question financière'],
+      role:            'Client · Zesty Media',
+      tags:            ['Rental management', 'Financial query'],
       property:        'APPT 42 RUE DU COMMERCE',
       milleniumLinked: true,
     },
     conversation: {
-      subject: 'Demande de détail charges locatives et appels de fonds 2025',
-      date:    new Date().toLocaleDateString('fr-FR'),
-      preview: "Je souhaite obtenir le détail des charges récupérables pour l'exercice 2025 ainsi que les prochains appels de fonds.",
+      subject: 'Request for service charge details and fund calls 2025',
+      date:    new Date().toLocaleDateString('en-GB'),
+      preview: "I would like to obtain the breakdown of recoverable charges for the 2025 financial year as well as the upcoming fund calls.",
     },
     alerts: [
-      { level: 'orange', text: 'Appel de fonds Q1 2025 — réponse en attente' },
-      { level: 'yellow', text: 'Régularisation charges 2024 — dossier en cours' },
+      { level: 'orange', text: 'Q1 2025 fund call — awaiting response' },
+      { level: 'yellow', text: '2024 service charge reconciliation — case in progress' },
     ],
     properties: [
       {
         name:   'APPT 42 RUE DU COMMERCE',
-        type:   'Gestion locative',
-        detail: 'Bail en cours · Gestionnaire : M. Lambert',
+        type:   'Rental management',
+        detail: 'Lease in progress · Manager: Mr Lambert',
         tags: [
-          { label: 'Locataire actif',          color: 'green'  },
-          { label: 'Appel fonds en attente',    color: 'orange' },
+          { label: 'Active tenant',     color: 'green'  },
+          { label: 'Fund call pending', color: 'orange' },
         ],
       },
     ],
     aiMessage:
-      "J'ai analysé la demande de Sarah Vidal concernant les **charges locatives et appels de fonds** (APPT 42 RUE DU COMMERCE).\n\n" +
-      "Elle souhaite :\n• Le détail des charges récupérables 2024\n• Le calendrier des appels de fonds Q1–Q2 2025\n• Une explication sur la hausse de 12 %\n\n" +
-      "Je peux préparer une réponse détaillée avec les montants et les dates clés. Voulez-vous que je rédige le brouillon ?",
+      "I've analysed Sarah Vidal's request regarding **service charges and fund calls** (APPT 42 RUE DU COMMERCE).\n\n" +
+      "She is asking for:\n• Breakdown of recoverable charges for 2024\n• Schedule of Q1–Q2 2025 fund calls\n• Explanation for the 12% increase\n\n" +
+      "I can prepare a detailed reply with the amounts and key dates. Would you like me to draft a reply?",
     replyContent: {
-      intro:  "Nous avons bien pris en compte votre demande concernant le détail de vos charges locatives et les appels de fonds pour le bien <strong>APPT 42 RUE DU COMMERCE</strong>.",
+      intro:  "We have noted your request for the breakdown of your service charges and fund calls for the property <strong>APPT 42 RUE DU COMMERCE</strong>.",
       points: [
-        "Régularisation charges 2024 : le document détaillé vous sera transmis sous <strong>48 heures ouvrées</strong>",
-        "Appel de fonds Q1 2025 : <strong>1 240 €</strong>, échéance le 31/01/2025",
-        "Appel de fonds Q2 2025 : <strong>1 240 €</strong>, échéance le 30/04/2025",
-        "L'augmentation de 12 % constatée est liée à la hausse des coûts énergétiques communs (chauffage collectif, éclairage parties communes)",
+        "2024 service charge reconciliation: the detailed document will be sent within <strong>48 working hours</strong>",
+        "Q1 2025 fund call: <strong>€1,240</strong>, due 31/01/2025",
+        "Q2 2025 fund call: <strong>€1,240</strong>, due 30/04/2025",
+        "The 12% increase is due to rising shared energy costs (collective heating, common area lighting)",
       ],
-      closing: "Votre gestionnaire M. Lambert reste disponible pour tout complément d'information. N'hésitez pas à nous recontacter.",
+      closing: "Your manager Mr Lambert is available for any further information. Please do not hesitate to contact us.",
     },
     relatedRecords: {
       factures:      [
-        { label: "Régularisation charges 2024", status: 'En attente', date: '10/01/2026' },
-        { label: 'Appel de fonds Q1 2025 — 1 240 €', status: 'Payée', date: '31/01/2025' },
-        { label: 'Appel de fonds Q4 2024 — 1 100 €', status: 'Payée', date: '01/10/2024' },
+        { label: "2024 service charge reconciliation", status: 'Pending', date: '10/01/2026' },
+        { label: 'Q1 2025 fund call — €1,240',         status: 'Paid',    date: '31/01/2025' },
+        { label: 'Q4 2024 fund call — €1,100',         status: 'Paid',    date: '01/10/2024' },
       ],
       ordresTravail: [],
       devis:         [],
       casDeSoutien:  [
-        { label: 'Demande détail charges 2024 — #3204', status: 'Ouvert', date: '12/01/2026' },
+        { label: '2024 charge detail request — #3204', status: 'Open', date: '12/01/2026' },
       ],
       contrats:      [
-        { label: 'Bail habitation — APPT 42 RUE DU COMMERCE', status: 'Actif', date: '01/03/2022' },
+        { label: 'Tenancy agreement — APPT 42 RUE DU COMMERCE', status: 'Active', date: '01/03/2022' },
       ],
     },
   },
@@ -130,56 +130,56 @@ const MOCK_BY_EMAIL = {
     contact: {
       name:            'Elias Moreau',
       role:            'Client · Audit Lawyer Club',
-      tags:            ['Copropriété', 'Administratif'],
+      tags:            ['Co-ownership', 'Administrative'],
       property:        'SDC TOUR BELLEVUE',
       milleniumLinked: true,
     },
     conversation: {
-      subject: 'Transmission documents — Changement mandataire syndic',
-      date:    new Date().toLocaleDateString('fr-FR'),
-      preview: 'Suite au changement de mandataire, je vous transmets les documents requis pour la mise à jour du dossier syndic.',
+      subject: 'Document submission — Change of managing agent',
+      date:    new Date().toLocaleDateString('en-GB'),
+      preview: 'Following the change of managing agent, I am sending you the documents required to update the syndic file.',
     },
     alerts: [
-      { level: 'orange', text: 'Changement mandataire — mise à jour dossier requise' },
-      { level: 'yellow', text: 'Documents en attente de validation administrative' },
+      { level: 'orange', text: 'Change of agent — file update required' },
+      { level: 'yellow', text: 'Documents pending administrative validation' },
     ],
     properties: [
       {
         name:   'SDC TOUR BELLEVUE',
-        type:   'Copropriété',
-        detail: '56 lots · Gestionnaire : M. Petit',
+        type:   'Co-ownership',
+        detail: '56 units · Manager: Mr Petit',
         tags: [
-          { label: 'Syndic',         color: 'blue' },
-          { label: 'Admin en cours', color: 'grey' },
+          { label: 'Co-ownership',      color: 'blue' },
+          { label: 'Admin in progress', color: 'grey' },
         ],
       },
     ],
     aiMessage:
-      "J'ai analysé l'email d'Elias Moreau concernant le **changement de mandataire syndic** (SDC TOUR BELLEVUE).\n\n" +
-      "Il transmet 4 documents administratifs suite à l'AG du 03/01/2025 :\n• PV d'assemblée générale\n• Mandat de gestion\n• Liste des copropriétaires\n• RIB mis à jour\n\n" +
-      "Je recommande d'accuser réception et de confirmer le délai de traitement. Voulez-vous que je prépare la réponse ?",
+      "I've analysed Elias Moreau's email regarding the **change of managing agent** (SDC TOUR BELLEVUE).\n\n" +
+      "He is submitting 4 administrative documents following the AGM of 03/01/2025:\n• AGM minutes\n• Management mandate\n• Updated list of co-owners\n• Updated bank details\n\n" +
+      "I recommend acknowledging receipt and confirming the processing timeline. Would you like me to prepare the reply?",
     replyContent: {
-      intro:  "Nous accusons bonne réception des documents que vous nous avez transmis dans le cadre du changement de mandataire pour la <strong>SDC TOUR BELLEVUE</strong>.",
+      intro:  "We confirm receipt of the documents you have submitted in connection with the change of managing agent for <strong>SDC TOUR BELLEVUE</strong>.",
       points: [
-        "✓ Procès-verbal d'assemblée générale du 03/01/2025 — <strong>Reçu</strong>",
-        "✓ Mandat de gestion signé par le nouveau mandataire — <strong>Reçu</strong>",
-        "✓ Liste actualisée des copropriétaires — <strong>Reçu</strong>",
-        "✓ Coordonnées bancaires (RIB) mises à jour — <strong>Reçu</strong>",
+        "✓ AGM minutes dated 03/01/2025 — <strong>Received</strong>",
+        "✓ Management mandate signed by the new agent — <strong>Received</strong>",
+        "✓ Updated list of co-owners — <strong>Received</strong>",
+        "✓ Updated bank details — <strong>Received</strong>",
       ],
-      closing: "La mise à jour administrative de votre dossier sera effectuée dans un délai de <strong>5 jours ouvrés</strong>. Vous recevrez une confirmation par email à l'issue de cette démarche. Votre gestionnaire M. Petit reste à votre disposition.",
+      closing: "The administrative update to your file will be completed within <strong>5 working days</strong>. You will receive a confirmation email upon completion. Your manager Mr Petit remains at your disposal.",
     },
     relatedRecords: {
       factures:      [
-        { label: 'Honoraires syndic 2025 — SDC TOUR BELLEVUE', status: 'En attente', date: '05/01/2026' },
+        { label: 'Syndic fees 2025 — SDC TOUR BELLEVUE', status: 'Pending', date: '05/01/2026' },
       ],
       ordresTravail: [],
       devis:         [],
       casDeSoutien:  [
-        { label: 'Changement mandataire — mise à jour dossier', status: 'Ouvert', date: '06/01/2026' },
-        { label: 'Validation documents AG 03/01/2025', status: 'En cours', date: '03/01/2025' },
+        { label: 'Change of agent — file update',      status: 'Open',        date: '06/01/2026' },
+        { label: 'Document validation AGM 03/01/2025', status: 'In progress', date: '03/01/2025' },
       ],
       contrats:      [
-        { label: 'Mandat de syndic 2025 — SDC TOUR BELLEVUE', status: 'Actif', date: '03/01/2025' },
+        { label: 'Syndic mandate 2025 — SDC TOUR BELLEVUE', status: 'Active', date: '03/01/2025' },
       ],
     },
   },
@@ -188,58 +188,58 @@ const MOCK_BY_EMAIL = {
 const DEFAULT_MOCK = {
   contact: {
     name:            'Damien Pozzi',
-    role:            'Collaborateur interne · Test-Sirius-Reemia',
-    tags:            ['Copropriété', 'Gestion locative', 'Fournisseur actif'],
+    role:            'Internal collaborator · Test-Sirius-Reemia',
+    tags:            ['Co-ownership', 'Rental management', 'Active supplier'],
     property:        'SDC BLO VOLTAIRE',
     milleniumLinked: true,
   },
   conversation: {
-    subject: "Demande d'informations sur l'assurance",
+    subject: "Insurance information request",
     date:    '19/12/2025',
-    preview: 'Demande de copie du contrat MRCI multirisque immeuble en cours.',
+    preview: 'Request for a copy of the current MRCI multi-risk building insurance contract.',
   },
   alerts: [
-    { level: 'red',    text: 'Appel de fonds en attente — SDC BLO VOLTAIRE · réponse requise' },
-    { level: 'orange', text: 'Demande travaux fournisseur en cours (autorisation requise)' },
-    { level: 'yellow', text: 'Dégradation local poubelles signalée — ticket ouvert' },
+    { level: 'red',    text: 'Fund call pending — SDC BLO VOLTAIRE · response required' },
+    { level: 'orange', text: 'Supplier works request in progress (authorisation required)' },
+    { level: 'yellow', text: 'Bin store damage reported — ticket open' },
   ],
   properties: [
     {
       name:   'SDC BLO VOLTAIRE',
-      type:   'Copropriété',
-      detail: '34 lots · Gestionnaire : M. Arnaud',
+      type:   'Co-ownership',
+      detail: '34 units · Manager: Mr Arnaud',
       tags: [
-        { label: 'Syndic',                 color: 'blue'   },
-        { label: 'Appel fonds en attente', color: 'orange' },
+        { label: 'Co-ownership',      color: 'blue'   },
+        { label: 'Fund call pending', color: 'orange' },
       ],
     },
     {
       name:   'SOC MAIRIE ST MAUR',
-      type:   'Gestion locative',
-      detail: 'Bail en cours',
-      tags: [{ label: 'Locataire actif', color: 'green' }],
+      type:   'Rental management',
+      detail: 'Lease in progress',
+      tags: [{ label: 'Active tenant', color: 'green' }],
     },
   ],
   aiMessage: null, // will be generated from subject
   replyContent: null,
   relatedRecords: {
     factures:      [
-      { label: 'Appel de fonds Q4 2025 — SDC BLO VOLTAIRE', status: 'En attente', date: '01/10/2025' },
-      { label: 'Charges 2024 — Régularisation', status: 'Payée', date: '30/06/2025' },
+      { label: 'Q4 2025 fund call — SDC BLO VOLTAIRE', status: 'Pending',     date: '01/10/2025' },
+      { label: '2024 service charges — Reconciliation', status: 'Paid',        date: '30/06/2025' },
     ],
     ordresTravail: [
-      { label: 'Réparation local poubelles — Bât. B', status: 'En cours', date: '15/12/2025' },
-      { label: 'Demande travaux fournisseur — Électricité', status: 'En attente', date: '10/12/2025' },
+      { label: 'Bin store repair — Block B',     status: 'In progress', date: '15/12/2025' },
+      { label: 'Supplier works — Electrical',    status: 'Pending',     date: '10/12/2025' },
     ],
     devis:         [
-      { label: 'Réfection local poubelles — Devis #2025-442', status: 'Proposé', date: '12/12/2025' },
+      { label: 'Bin store refurbishment — Quote #2025-442', status: 'Proposed', date: '12/12/2025' },
     ],
     casDeSoutien:  [
-      { label: 'Dégradation local poubelles — #3891', status: 'Ouvert', date: '14/12/2025' },
-      { label: "Assurance MRCI — demande copie contrat", status: 'En cours', date: '19/12/2025' },
+      { label: 'Bin store damage — #3891',            status: 'Open',        date: '14/12/2025' },
+      { label: "Insurance MRCI — copy contract request", status: 'In progress', date: '19/12/2025' },
     ],
     contrats:      [
-      { label: 'Contrat syndic 2025 — SDC BLO VOLTAIRE', status: 'Actif', date: '01/01/2025' },
+      { label: 'Co-ownership contract 2025 — SDC BLO VOLTAIRE', status: 'Active', date: '01/01/2025' },
     ],
   },
 };
@@ -283,7 +283,7 @@ function resolveContext(sdkCtx) {
     conversation: {
       subject: conv.subject || mock.conversation.subject,
       date:    conv.updatedAt
-        ? new Date(conv.updatedAt).toLocaleDateString('fr-FR')
+        ? new Date(conv.updatedAt).toLocaleDateString('en-GB')
         : mock.conversation.date,
       preview:
         (conv.latestMessage && conv.latestMessage.text) ||
